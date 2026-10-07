@@ -111,7 +111,9 @@ table.heat { width: 100%; min-width: 860px; table-layout: fixed; border-collapse
     font-size: 10px; font-variant-numeric: tabular-nums; color: var(--color-gray-900); }
 .heat col.c-profile { width: 20px; }
 .heat col.c-hour { width: 40px; }
-.heat col.c-avg { width: 48px; }
+.heat col.c-avg { width: 54px; }
+/* The average column sits left of the days, with a wider gap after it */
+.heat .avg, .heat .month-total { border-right: 6px solid var(--color-white); background-clip: padding-box; }
 .heat th, .heat td { padding: 0; text-align: center; white-space: nowrap; overflow: hidden; }
 .heat thead th { height: 32px; line-height: 1.2; font-weight: var(--font-weight-semibold); vertical-align: bottom; padding-bottom: var(--space-0-5); }
 .heat thead th .wd { display: block; font-weight: 400; font-size: 9px; color: var(--color-gray-500); }
@@ -362,8 +364,8 @@ function interpolate(days) {
 /* ---------- What the backend would return for one month ---------- */
 
 const PROFILE_COLORS = ['#2675b8', '#23c6c8', '#676a6c', '#0dace3'];
-// Placeholder for Valentina's number: below this share of readings no profiles are computed.
-const PROFILE_MIN_COVERAGE = 0.8;
+// Valentina's number: below this share of readings no profiles are computed.
+const PROFILE_MIN_COVERAGE = 0.9;
 
 // Splits the 24 hourly averages into up to four runs of consecutive hours, each run as
 // even as possible. Stands in for the backend's profile algorithm.
@@ -623,7 +625,7 @@ const MonthCard = {
                 <i class="fa fa-exclamation-triangle"></i>
                 <div>
                     Očitanja postoje za {{ month.daysWithData }} od {{ month.days.length }} dana, pa prosjeci vrijede samo za te dane.
-                    <template v-if="showProfiles && !month.profiles">Dnevni profili se računaju tek kad mjesec ima barem 80 % očitanja.</template>
+                    <template v-if="showProfiles && !month.profiles">Dnevni profili se računaju tek kad mjesec ima barem 90 % očitanja.</template>
                 </div>
             </div>
             <div class="heat-scroll">
@@ -631,16 +633,16 @@ const MonthCard = {
                     <colgroup>
                         <col v-if="profiles" class="c-profile">
                         <col class="c-hour">
-                        <col v-for="d in month.days" :key="'c' + d.day">
                         <col class="c-avg">
+                        <col v-for="d in month.days" :key="'c' + d.day">
                         <col class="c-hour">
                     </colgroup>
                     <thead>
                         <tr>
                             <th v-if="profiles"></th>
                             <th class="hour hour-l">Sat</th>
-                            <th v-for="d in month.days" :key="'h' + d.day" :class="{ weekend: d.isWeekend }"><span class="wd">{{ WEEKDAYS[d.weekday] }}</span>{{ pad(d.day) }}</th>
                             <th class="avg">Ø</th>
+                            <th v-for="d in month.days" :key="'h' + d.day" :class="{ weekend: d.isWeekend }"><span class="wd">{{ WEEKDAYS[d.weekday] }}</span>{{ pad(d.day) }}</th>
                             <th class="hour hour-r">Sat</th>
                         </tr>
                     </thead>
@@ -652,10 +654,10 @@ const MonthCard = {
                                     :rowspan="profileOf(r.hour).to - profileOf(r.hour).from"
                                     @mouseenter="tipProfile($event, profileOf(r.hour))">{{ profileOf(r.hour).name }}</td>
                                 <th class="hour hour-l">{{ hourRange(r.hour) }}</th>
+                                <td class="avg" @mouseenter="tipAverage($event, r.hour)">{{ fmt(month.hourlyAverages[r.hour]) }}</td>
                                 <td v-for="d in month.days" :key="d.day" :class="cellClass(d, r.hour)" :style="cellStyle(d, r.hour)"
                                     :data-gap="d.day === month.gapDay && r.hour === 13 ? 'true' : null"
                                     @mouseenter="tipCell($event, d, r.hour)">{{ fmt(d.hours[r.hour].value) }}</td>
-                                <td class="avg" @mouseenter="tipAverage($event, r.hour)">{{ fmt(month.hourlyAverages[r.hour]) }}</td>
                                 <th class="hour hour-r">{{ hourRange(r.hour) }}</th>
                             </tr>
                         </template>
@@ -664,8 +666,8 @@ const MonthCard = {
                         <tr>
                             <th v-if="profiles"></th>
                             <th class="hour hour-l" :title="isConsumption ? 'Ukupno po danu' : 'Prosjek po danu'">{{ isConsumption ? '∑' : 'Ø' }}</th>
-                            <td v-for="(d, i) in month.days" :key="'s' + d.day" :class="{ weekend: d.isWeekend }" @mouseenter="tipDay($event, d, i)">{{ fmtTotal(month.dayValues[i]) }}</td>
                             <td class="month-total" @mouseenter="tipTotal($event)">{{ fmtTotal(month.dailyAverage) }}</td>
+                            <td v-for="(d, i) in month.days" :key="'s' + d.day" :class="{ weekend: d.isWeekend }" @mouseenter="tipDay($event, d, i)">{{ fmtTotal(month.dayValues[i]) }}</td>
                             <th class="hour hour-r">{{ isConsumption ? '∑' : 'Ø' }}</th>
                         </tr>
                     </tfoot>
