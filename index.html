@@ -96,6 +96,8 @@ a { cursor: pointer; }
 .month-card .ibox-title { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; padding-right: 15px; min-height: 48px; }
 .month-card .ibox-title h5 { float: none; margin: 0; }
 .month-card__meter { color: var(--color-gray-500); font-size: var(--font-size-body); }
+.month-card__total { margin-left: auto; color: var(--color-gray-700); font-size: var(--font-size-body); }
+.month-card__total strong { color: var(--color-gray-900); font-variant-numeric: tabular-nums; }
 .month-card .ibox-content { padding: 15px 20px 20px; }
 .month-stats { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-10); margin-bottom: var(--space-3); }
 .month-stats div { display: flex; flex-direction: column; }
@@ -428,12 +430,16 @@ function buildMonth(quantityKey, meter, index, withInterpolation) {
     });
     const knownDays = dayValues.filter((v) => v !== null);
     const dailyAverage = knownDays.length ? knownDays.reduce((s, v) => s + v, 0) / knownDays.length : null;
+    // The whole month: a sum for consumption, the mean of every reading otherwise.
+    const readings = days.flatMap((d) => d.hours.map((h) => h.value)).filter((v) => v !== null);
+    const readingsSum = readings.reduce((s, v) => s + v, 0);
+    const monthTotal = !readings.length ? null : quantity.kind === 'consumption' ? readingsSum : readingsSum / readings.length;
     const coverage = measured / (days.length * 24);
     const daysWithData = days.filter((d) => d.hours.some((h) => h.value !== null && !h.isFuture)).length;
     const canProfile = coverage >= PROFILE_MIN_COVERAGE && hourlyAverages.every((v) => v !== null);
     return {
         index, title: monthLabel(index), quantityKey, quantity, meter, days, max, min,
-        hourlyAverages, dayValues, dailyAverage, coverage, daysWithData, gapDay: raw.gapDay,
+        hourlyAverages, dayValues, dailyAverage, monthTotal, coverage, daysWithData, gapDay: raw.gapDay,
         isCurrent: index === NOW_INDEX,
         profiles: canProfile ? findProfiles(hourlyAverages, quantity.kind) : null
     };
@@ -619,6 +625,7 @@ const MonthCard = {
         <div class="ibox-title">
             <h5>{{ month.title }}</h5>
             <span class="month-card__meter">{{ month.meter.location }}, {{ month.meter.name }} ({{ unit }})</span>
+            <span class="month-card__total">{{ isConsumption ? 'Ukupno' : 'Prosječno očitanje' }}: <strong>{{ month.monthTotal === null ? '-/-' : fmtTotal(month.monthTotal) + ' ' + unit }}</strong></span>
         </div>
         <div class="ibox-content">
             <div v-if="month.coverage < 0.97" class="alert alert-warning coverage-alert" role="status">
