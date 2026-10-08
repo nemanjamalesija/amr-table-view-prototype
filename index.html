@@ -764,7 +764,7 @@ const MonthCard = {
                 <span class="month-card__total">{{ isConsumption ? 'Ukupno' : 'Prosječno očitanje' }}: <strong>{{ month.monthTotal === null ? '-/-' : fmt(month.monthTotal) + ' ' + unit }}</strong></span>
             </div>
             <button type="button" class="btn btn--secondary month-card__export" :disabled="isExporting" @click="exportImage">
-                <i :class="isExporting ? 'fa fa-spinner fa-spin' : 'fa fa-image'"></i> Slika (PNG)</button>
+                <i :class="isExporting ? 'fa fa-spinner fa-spin' : 'fa fa-download'"></i> Preuzmi kao sliku</button>
         </div>
         <div class="ibox-content">
             <div v-if="month.coverage < 0.97" class="alert alert-warning coverage-alert" role="status">
@@ -886,7 +886,7 @@ const SCREENS = [
     { id: 'SCR-04', name: 'Više mjeseci', hint: 'Tri mjeseca, zadnji je nepotpun' },
     { id: 'SCR-05', name: 'Interpolacija', hint: 'Rupa popunjena, izgleda kao i ostala polja' },
     { id: 'SCR-06', name: 'Temperatura', hint: 'Veličina bez potrošnje, red prosjeka' },
-    { id: 'SCR-07', name: 'Izvoz slike', hint: 'Gumb Slika (PNG) na svakoj tablici' },
+    { id: 'SCR-07', name: 'Izvoz slike', hint: 'Gumb Preuzmi kao sliku na svakoj tablici' },
     { id: 'SCR-08', name: 'Raspon boja', hint: 'Korisnik postavi boje od 0 do 2 m³' }
 ];
 
