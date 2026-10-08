@@ -49,11 +49,6 @@ a { cursor: pointer; }
 .settings-grid .form-group { margin-bottom: 0; position: relative; }
 .switch-field { height: var(--control-height); display: flex; align-items: center; }
 .field-hint { position: absolute; top: 100%; left: 0; margin-top: var(--space-1); font-size: var(--font-size-caption); }
-.export-menu { position: relative; }
-.export-menu .dropdown-menu { top: calc(100% + var(--space-1)); left: auto; right: 0; min-width: 180px; padding: var(--space-1) 0; box-shadow: var(--elevation-dropdown); border-color: var(--color-gray-200); }
-.export-menu .dropdown-item { display: flex; align-items: center; gap: var(--space-2); width: 100%; padding: var(--space-2) var(--space-3); border: 0; background: none; font-size: var(--font-size-body); color: var(--color-gray-900); cursor: pointer; }
-.export-menu .dropdown-item:hover { background: var(--color-gray-100); }
-.export-menu .dropdown-item i { width: 14px; color: var(--color-gray-600); }
 .settings-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 @media (max-width: 1399px) { .settings-grid { grid-template-columns: minmax(200px, 2fr) minmax(140px, 1fr) minmax(90px, 0.6fr) auto; } .settings-actions { grid-column: 1 / -1; } }
 @media (max-width: 575px) { .settings-grid { grid-template-columns: 1fr; } }
@@ -111,7 +106,13 @@ a { cursor: pointer; }
 .month-card .ibox-title { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; padding-right: 15px; min-height: 48px; }
 .month-card .ibox-title h5 { float: none; margin: 0; }
 .month-card__meter { color: var(--color-gray-500); font-size: var(--font-size-body); }
-.month-card__total { margin-left: auto; color: var(--color-gray-700); font-size: var(--font-size-body); }
+/* The month total sits under the month title, as legacy prints it */
+.month-card__titles { display: flex; flex-direction: column; gap: var(--space-0-5); }
+.month-card__titles h5 { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-3); }
+.month-card__titles .month-card__meter { font-weight: 400; }
+.month-card__total { color: var(--color-gray-700); font-size: var(--font-size-body); }
+.month-card__export { margin-left: auto; height: 28px; padding: 0 var(--space-3); font-size: var(--font-size-body); }
+.export-sheet .month-card__export { display: none; }
 .month-card__total strong { color: var(--color-gray-900); font-variant-numeric: tabular-nums; }
 .month-card .ibox-content { padding: 15px 20px 20px; }
 .month-stats { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-10); margin-bottom: var(--space-3); }
@@ -162,7 +163,7 @@ table.heat { width: 100%; min-width: 860px; table-layout: fixed; border-collapse
 .legend-switch { display: inline-flex; align-items: center; gap: var(--space-1-5); margin: 0; color: var(--color-gray-900); font-weight: var(--font-weight-semibold); cursor: pointer; }
 .legend-switch .toggle-switch { transform: scale(0.8); }
 .export-sheet .legend-switches { display: none; }
-.profile-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-10); margin-top: var(--space-4); font-size: var(--font-size-body); color: var(--color-gray-700); }
+.profile-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-10); margin-top: var(--space-4); font-size: 0.875rem; color: var(--color-gray-700); }
 .profile-legend__title { font-weight: var(--font-weight-semibold); color: var(--color-gray-900); }
 .profile-legend__item { display: inline-flex; align-items: center; gap: var(--space-2); }
 .profile-legend__item b { color: var(--color-gray-900); font-variant-numeric: tabular-nums; }
@@ -198,9 +199,6 @@ table.heat { width: 100%; min-width: 860px; table-layout: fixed; border-collapse
 .modal--active { z-index: 2100; display: block; position: fixed; inset: 0; overflow: hidden auto; }
 .modal__backdrop { background: var(--color-black); opacity: 0.5; z-index: -1; position: fixed; inset: 0; }
 .modal--active .modal-dialog { max-width: min(1200px, calc(100vw - 32px)); margin: 40px auto; }
-.export-item + .export-item { margin-top: var(--space-4); padding-top: var(--space-4); border-top: var(--border-width) solid var(--color-gray-200); }
-.export-item__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-2); }
-.export-item__head h5 { margin: 0; font-weight: var(--font-weight-semibold); color: var(--color-gray-900); }
 .export-preview { border: var(--border-width) solid var(--color-gray-200); max-width: 100%; display: block; }
 .export-note { font-size: var(--font-size-caption); color: var(--color-gray-500); margin: var(--space-2) 0 0; }
 
@@ -420,7 +418,6 @@ function interpolate(days) {
             const from = flat[lastKnown].value;
             for (let j = lastKnown + 1; j < i; j++) {
                 flat[j].value = from + ((cell.value - from) * (j - lastKnown)) / (i - lastKnown);
-                flat[j].isInterpolated = true;
             }
         }
         lastKnown = i;
@@ -652,34 +649,36 @@ const MeterSelect = {
         </div></div>`
 };
 
-const ExportMenu = {
-    props: { disabled: Boolean },
-    emits: ['excel', 'image'],
-    setup(props, { emit }) {
-        const open = ref(false);
-        const root = ref(null);
-        const choose = (kind) => { open.value = false; emit(kind); };
-        const onOutside = (e) => { if (root.value && !root.value.contains(e.target)) open.value = false; };
-        const onKey = (e) => { if (e.key === 'Escape') open.value = false; };
-        onMounted(() => { document.addEventListener('mousedown', onOutside); document.addEventListener('keydown', onKey); });
-        onBeforeUnmount(() => { document.removeEventListener('mousedown', onOutside); document.removeEventListener('keydown', onKey); });
-        return { open, root, choose };
-    },
-    template: `<div class="dropdown export-menu" ref="root">
-        <button type="button" class="btn btn--secondary btn-w-m" style="height: var(--control-height)" :disabled="disabled"
-            :title="disabled ? 'Prvo nacrtajte tablice' : null" aria-haspopup="menu" :aria-expanded="open" @click="open = !open">
-            <i class="fa fa-download"></i> Izvoz <i class="fa fa-caret-down"></i></button>
-        <div v-if="open" class="dropdown-menu show" role="menu">
-            <button type="button" class="dropdown-item" role="menuitem" @click="choose('excel')"><i class="fa fa-file-excel"></i> Podaci (Excel)</button>
-            <button type="button" class="dropdown-item" role="menuitem" @click="choose('image')"><i class="fa fa-image"></i> Slika (PNG)</button>
-        </div></div>`
-};
-
 const MonthCard = {
     props: { month: Object, showProfiles: Boolean, range: Object },
     components: { ToggleSwitch },
-    emits: ['toggle-profiles', 'update:range'],
+    emits: ['toggle-profiles', 'update:range', 'show-image'],
     setup(props, { emit }) {
+        const root = ref(null);
+        const isExporting = ref(false);
+        // Draws this table alone on an offscreen sheet and downloads it as a PNG.
+        async function exportImage() {
+            isExporting.value = true;
+            const sheet = document.createElement('div');
+            sheet.className = 'export-sheet';
+            sheet.appendChild(root.value.cloneNode(true));
+            document.body.appendChild(sheet);
+            try {
+                const src = await modernScreenshot.domToPng(sheet, { scale: 2, backgroundColor: '#ffffff' });
+                const fileName = 'tablicni-prikaz-' + props.month.title.toLowerCase().replace(/ /g, '-') + '.png';
+                if (CAN_DOWNLOAD) {
+                    const link = document.createElement('a');
+                    link.href = src;
+                    link.download = fileName;
+                    link.click();
+                } else {
+                    emit('show-image', { title: props.month.title, src });
+                }
+            } finally {
+                sheet.remove();
+                isExporting.value = false;
+            }
+        }
         const decimals = computed(() => decimalsFor(props.month));
         const totalDecimals = computed(() => (props.month.quantity.kind === 'consumption' ? (decimals.value > 1 ? 1 : 0) : decimals.value));
         const unit = computed(() => props.month.quantity.unit);
@@ -754,22 +753,25 @@ const MonthCard = {
             const d = props.month.days[extreme.day - 1];
             return `${WEEKDAYS[d.weekday]} ${pad(extreme.day)}.${pad(monthNumber.value)}., ${hourLabel(extreme.hour)} h`;
         };
-        return { fmt, fmtTotal, unit, isConsumption, profiles, profileOf, profileShade, columnCount, scale, colorOf, extremePlace,
+        return { root, isExporting, exportImage, fmt, fmtTotal, unit, isConsumption, profiles, profileOf, profileShade, columnCount, scale, colorOf, extremePlace,
             cellClass, cellStyle, step, bounds, sliderValue, sliderPercent, trackStyle, hasCustomRange, setLow, setHigh, onTyped, resetRange,
-            hourLabel, meterName, pad, HOURS, WEEKDAYS };
+            hourLabel, meterName, pad, HOURS, WEEKDAYS, Math };
     },
-    template: `<div class="ibox month-card">
+    template: `<div class="ibox month-card" ref="root">
         <div class="ibox-title">
-            <h5>{{ month.title }}</h5>
-            <span class="month-card__meter">{{ meterName(month.meter) }} ({{ unit }})</span>
-            <span class="month-card__total">{{ isConsumption ? 'Ukupna potrošnja' : 'Prosječno očitanje' }}: <strong>{{ month.monthTotal === null ? '-/-' : fmtTotal(month.monthTotal) + ' ' + unit }}</strong></span>
+            <div class="month-card__titles">
+                <h5>{{ month.title }} <span class="month-card__meter">{{ meterName(month.meter) }} ({{ unit }})</span></h5>
+                <span class="month-card__total">{{ isConsumption ? 'Ukupno' : 'Prosječno očitanje' }}: <strong>{{ month.monthTotal === null ? '-/-' : fmt(month.monthTotal) + ' ' + unit }}</strong></span>
+            </div>
+            <button type="button" class="btn btn--secondary month-card__export" :disabled="isExporting" @click="exportImage">
+                <i :class="isExporting ? 'fa fa-spinner fa-spin' : 'fa fa-image'"></i> Slika (PNG)</button>
         </div>
         <div class="ibox-content">
             <div v-if="month.coverage < 0.97" class="alert alert-warning coverage-alert" role="status">
                 <i class="fa fa-exclamation-triangle"></i>
                 <div>
                     Očitanja postoje za {{ month.daysWithData }} od {{ month.days.length }} dana, pa prosjeci vrijede samo za te dane.
-                    <template v-if="showProfiles && !month.profiles">Dnevni profili se računaju tek kad mjesec ima barem 22 % očitanja, otprilike 7 dana.</template>
+                    <template v-if="showProfiles && !month.profiles">Za dnevne profile potrebno je barem 22 % očitanja u mjesecu, a sada ih je {{ Math.floor(month.coverage * 100) }} %.</template>
                 </div>
             </div>
             <div class="heat-scroll">
@@ -884,14 +886,14 @@ const SCREENS = [
     { id: 'SCR-04', name: 'Više mjeseci', hint: 'Tri mjeseca, zadnji je nepotpun' },
     { id: 'SCR-05', name: 'Interpolacija', hint: 'Rupa popunjena, izgleda kao i ostala polja' },
     { id: 'SCR-06', name: 'Temperatura', hint: 'Veličina bez potrošnje, red prosjeka' },
-    { id: 'SCR-07', name: 'Izvoz slika', hint: 'Jedan PNG za svaki nacrtani mjesec' },
+    { id: 'SCR-07', name: 'Izvoz slike', hint: 'Gumb Slika (PNG) na svakoj tablici' },
     { id: 'SCR-08', name: 'Raspon boja', hint: 'Korisnik postavi boje od 0 do 2 m³' }
 ];
 
 /* ---------- App ---------- */
 
 createApp({
-    components: { ToggleSwitch, MonthPicker, MonthCard, ExportMenu, MeterSelect },
+    components: { ToggleSwitch, MonthPicker, MonthCard, MeterSelect },
     setup() {
         const state = reactive({
             quantity: 'water',
@@ -905,10 +907,7 @@ createApp({
             loading: false,
             drawn: null,
             openGroup: null,
-            exportOpen: false,
-            exportImages: [],
-            exportTitle: '',
-            exportFailed: false,
+            exportImage: null,
             navOpen: window.innerWidth > 700
         });
         const toast = ref(null);
@@ -936,7 +935,7 @@ createApp({
             return Array.from({ length: d.count }, (_, i) => buildMonth(quantityKeyOf(meter, d.quantity), meter, d.firstMonth + i, d.interpolation));
         });
         const currentScreen = computed(() => {
-            if (state.exportOpen) return 'SCR-07';
+            if (state.exportImage) return 'SCR-07';
             if (!state.drawn) return 'SCR-01';
             if (Object.keys(state.ranges).length) return 'SCR-08';
             if (months.value[0].quantity.kind === 'average') return 'SCR-06';
@@ -985,34 +984,9 @@ createApp({
             const range = d.count === 1 ? monthLabel(d.firstMonth) : `${monthLabel(d.firstMonth)} do ${monthLabel(last)}`;
             showToast(`Excel za ${meterName(meter)}, ${range}, radi server kao i danas. U prototipu se datoteka ne preuzima.`);
         }
-        // One picture per drawn month, each downloaded on its own.
-        async function exportImage() {
-            if (!state.drawn) return;
-            state.exportOpen = true;
-            state.exportImages = [];
-            state.exportFailed = false;
-            const titles = months.value.map((m) => m.title);
-            state.exportTitle = titles.length === 1 ? titles[0] : `${titles[0]} do ${titles[titles.length - 1]}`;
-            const cards = [...document.querySelectorAll('.month-card')];
-            for (const [i, card] of cards.entries()) {
-                const sheet = document.createElement('div');
-                sheet.className = 'export-sheet';
-                sheet.appendChild(card.cloneNode(true));
-                document.body.appendChild(sheet);
-                try {
-                    const src = await modernScreenshot.domToPng(sheet, { scale: 2, backgroundColor: '#ffffff' });
-                    if (!state.exportOpen) return;
-                    state.exportImages.push({ title: titles[i], src, fileName: 'tablicni-prikaz-' + titles[i].toLowerCase().replace(/ /g, '-') + '.png' });
-                } catch (error) {
-                    state.exportFailed = true;
-                    console.error(error);
-                    return;
-                } finally {
-                    sheet.remove();
-                }
-            }
-        }
-        function closeExport() { state.exportOpen = false; state.exportImages = []; }
+        // Only the private artifact copy shows the picture, because its viewer blocks downloads.
+        function showImage(image) { state.exportImage = image; }
+        function closeExport() { state.exportImage = null; }
 
         async function jump(id) {
             closeExport();
@@ -1035,7 +1009,10 @@ createApp({
             }
             const firstCard = document.querySelector('.month-card');
             if (firstCard) window.scrollTo({ top: firstCard.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
-            if (id === 'SCR-07') exportImage();
+            if (id === 'SCR-07') {
+                const exportButton = document.querySelector('.month-card__export');
+                if (exportButton) exportButton.focus();
+            }
             if (id === 'SCR-08') state.ranges = { [monthIndex(2026, 9)]: { low: 0, high: 2 } };
         }
 
@@ -1047,7 +1024,7 @@ createApp({
         const isActive = (item) => item.quantity === state.quantity || (item.children || []).some((c) => c.quantity === state.quantity);
 
         return { state, quantity, meterGroups, maxCount, months, currentScreen, toast, SIDEBAR, SCREENS, CAN_DOWNLOAD,
-            setFirstMonth, draw, exportExcel, exportImage, closeExport, jump, sidebarClick, isActive, showToast };
+            setFirstMonth, draw, exportExcel, showImage, closeExport, jump, sidebarClick, isActive, showToast };
     },
     template: `
     <div id="wrapper">
@@ -1124,7 +1101,8 @@ createApp({
                                             </div>
                                             <div class="settings-actions">
                                                 <button type="submit" class="btn btn--primary btn-w-m" style="height: var(--control-height)">Nacrtaj tablice</button>
-                                                <export-menu :disabled="!state.drawn || state.loading" @excel="exportExcel" @image="exportImage"></export-menu>
+                                                <button type="button" class="btn btn--secondary btn-w-m" style="height: var(--control-height)" :disabled="!state.drawn || state.loading"
+                                                    :title="!state.drawn ? 'Prvo nacrtajte tablice' : null" @click="exportExcel"><i class="fa fa-file-excel"></i> Izvoz podataka</button>
                                             </div>
                                         </form>
                                     </div>
@@ -1142,7 +1120,7 @@ createApp({
                                 </div>
                                 <template v-else>
                                     <month-card v-for="m in months" :key="m.index" :month="m" :show-profiles="state.profiles" :range="state.ranges[m.index] || null"
-                                        @toggle-profiles="state.profiles = $event" @update:range="state.ranges[m.index] = $event"></month-card>
+                                        @toggle-profiles="state.profiles = $event" @update:range="state.ranges[m.index] = $event" @show-image="showImage"></month-card>
                                 </template>
 
                             </div>
@@ -1161,27 +1139,17 @@ createApp({
 
     <div v-if="toast" class="proto-toast" role="status">{{ toast }}</div>
 
-    <div v-if="state.exportOpen" class="modal--active" role="dialog" aria-modal="true" aria-labelledby="export-title">
+    <div v-if="state.exportImage" class="modal--active" role="dialog" aria-modal="true" aria-labelledby="export-title">
         <div class="modal__backdrop" @click="closeExport"></div>
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title" id="export-title">Izvoz slika, {{ state.exportTitle }}</h4>
+                    <h4 class="modal-title" id="export-title">Slika, {{ state.exportImage.title }}</h4>
                     <button type="button" class="close" aria-label="Zatvori" @click="closeExport"><span aria-hidden="true">&times;</span></button>
                 </div>
                 <div class="modal-body">
-                    <p v-if="!CAN_DOWNLOAD" class="export-note" style="margin: 0 0 var(--space-3)">U aplikaciji svaki mjesec ima gumb za preuzimanje. Pregled u kojem gledate prototip ne dopušta preuzimanje, pa su gumbi ovdje izostavljeni.</p>
-                    <div v-for="image in state.exportImages" :key="image.title" class="export-item">
-                        <div class="export-item__head">
-                            <h5>{{ image.title }}</h5>
-                            <a v-if="CAN_DOWNLOAD" class="btn btn--primary btn-sm" :href="image.src" :download="image.fileName"><i class="fa fa-download"></i> Preuzmi PNG</a>
-                        </div>
-                        <img :src="image.src" class="export-preview" :alt="'Tablica, ' + image.title">
-                    </div>
-                    <div v-if="state.exportImages.length < months.length && !state.exportFailed" class="state-box">
-                        <div class="sk-spinner sk-spinner-wave"><div class="sk-rect1"></div><div class="sk-rect2"></div><div class="sk-rect3"></div><div class="sk-rect4"></div><div class="sk-rect5"></div></div>
-                    </div>
-                    <p v-if="state.exportFailed" class="text-danger">Slika se nije uspjela izraditi.</p>
+                    <img :src="state.exportImage.src" class="export-preview" :alt="'Tablica, ' + state.exportImage.title">
+                    <p class="export-note">U aplikaciji gumb odmah preuzima ovu sliku kao PNG datoteku. Pregled u kojem gledate prototip ne dopušta preuzimanje, pa je slika prikazana ovdje.</p>
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn--secondary" @click="closeExport">Zatvori</button></div>
             </div>
