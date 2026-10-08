@@ -16,12 +16,16 @@
 </style>
 <style>
 /* The prototype's own parts. Every colour comes from amr-web's tokens in emasys.css,
-   except the heat scale and the profile tints, which have no token yet. */
+   except the heat scale and the profile greys, which have no token yet. */
 :root {
     color-scheme: light;
     --heat-low: #63be7b;
     --heat-mid: #ffeb84;
     --heat-high: #f8696b;
+    /* Profile shading, light to dark for low, transitional and high use */
+    --profile-low: #ffffff;
+    --profile-mid: #e6e6e6;
+    --profile-high: #c8c8c8;
     --sidebar: #243a4f;
 }
 html, body { background: var(--sidebar); }
@@ -83,6 +87,17 @@ a { cursor: pointer; }
 .month-picker__grid button:disabled { color: var(--color-gray-400); cursor: default; }
 .month-picker__grid button.is-selected { background: var(--color-primary); color: var(--color-white); }
 
+/* Meter field: type to filter, as the legacy selectize field does */
+.meter-select { position: relative; }
+.meter-select__input { padding-right: 28px; cursor: text; }
+.meter-select__caret { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--color-gray-500); pointer-events: none; }
+.meter-select__menu { top: calc(100% + var(--space-1)); left: 0; right: 0; max-height: 300px; overflow-y: auto; padding: var(--space-1) 0; box-shadow: var(--elevation-dropdown); border-color: var(--color-gray-200); z-index: 30; }
+.meter-select .dropdown-header { padding: var(--space-2) var(--space-3) var(--space-1); font-size: var(--font-size-caption); font-weight: var(--font-weight-semibold); color: var(--color-gray-500); }
+.meter-select .dropdown-item { display: block; width: 100%; padding: var(--space-1-5) var(--space-4); border: 0; background: none; text-align: left; font-size: var(--font-size-body); color: var(--color-gray-900); cursor: pointer; }
+.meter-select .dropdown-item.is-active { background: var(--color-gray-100); }
+.meter-select .dropdown-item.is-selected { color: var(--color-primary); font-weight: var(--font-weight-semibold); }
+.meter-select__empty { margin: 0; padding: var(--space-2) var(--space-4); font-size: var(--font-size-body); color: var(--color-gray-500); }
+
 /* Tabs: the Symfony chart page keeps both tabs, the table tab now lives here */
 .tabs-container .nav-tabs .nav-link { color: var(--color-gray-500); font-weight: var(--font-weight-semibold); padding: 10px 20px 10px 25px; }
 .tabs-container .nav-tabs .nav-link.active { color: var(--color-gray-700); }
@@ -121,55 +136,71 @@ table.heat { width: 100%; min-width: 860px; table-layout: fixed; border-collapse
 .heat thead th .wd { display: block; font-weight: 400; font-size: 9px; color: var(--color-gray-500); }
 .heat thead th.weekend { background: var(--color-gray-200); border-radius: var(--radius-md) var(--radius-md) 0 0; }
 .heat thead th.weekend .wd { color: var(--color-gray-700); }
-.heat th.hour { color: var(--color-gray-500); font-weight: 400; }
+.heat th.hour { color: var(--color-gray-500); font-weight: 400; border-radius: 2px; }
 .heat th.hour-l { text-align: right; padding-right: var(--space-1); }
 .heat th.hour-r { text-align: left; padding-left: var(--space-1); }
 .heat td.cell { height: 20px; border-radius: 2px; cursor: default; color: rgba(0, 0, 0, 0.7); }
-.heat.no-values td.cell { color: transparent; }
 .heat td.nodata { background: var(--color-gray-50); box-shadow: inset 0 0 0 1px var(--color-gray-200); }
-.heat td.interp { font-style: italic;
-    background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0 2px, transparent 2px 5px); }
-.heat td.max, .heat td.min { box-shadow: inset 0 0 0 2px var(--color-gray-900); font-weight: 700; color: var(--color-black); }
-.heat.no-values td.max, .heat.no-values td.min { color: transparent; }
+.heat td.max, .heat td.min { box-shadow: inset 0 0 0 3px var(--color-white), 0 0 0 1px var(--color-gray-400); font-weight: 700; color: var(--color-white); text-shadow: 0 0 2px rgba(0, 0, 0, 0.45); }
 .heat td.avg, .heat th.avg { background: var(--color-gray-100); border-radius: 2px; font-weight: var(--font-weight-semibold); color: var(--color-gray-700); }
 .heat thead th.avg { background: none; color: var(--color-gray-500); font-weight: 400; }
 .heat tfoot td { height: 22px; background: var(--color-gray-100); border-radius: 2px; font-weight: var(--font-weight-semibold); color: var(--color-gray-700); }
 .heat tfoot td.weekend { background: var(--color-gray-200); }
 .heat tfoot td.month-total { background: var(--color-gray-200); color: var(--color-gray-900); }
 .heat tfoot th.hour { font-size: var(--font-size-caption); color: var(--color-gray-700); }
-.heat tr.row-gap td { height: var(--space-1); }
 
-/* With profiles on, a gap splits the hours into the profiles and a bracket names each one */
-.heat td.profile { position: relative; font-size: var(--font-size-caption); font-weight: 700; color: var(--color-gray-700); }
-.heat td.profile::after { content: ''; position: absolute; top: 2px; bottom: 2px; right: 3px; width: 2px; border-radius: 1px; background: var(--color-gray-400); }
+/* With profiles on, each profile shades its letter, both hour labels and the hourly average */
+.heat td.profile { font-size: var(--font-size-caption); font-weight: 700; color: var(--color-gray-900); border-radius: 2px; }
 
 /* Legend */
 .heat-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-4); margin-top: var(--space-2-5); font-size: var(--font-size-caption); color: var(--color-gray-600); }
 .heat-legend > span { display: inline-flex; align-items: center; gap: var(--space-1-5); }
 .heat-legend .scale { width: 96px; height: 8px; border-radius: 2px; background: linear-gradient(90deg, var(--heat-low), var(--heat-mid), var(--heat-high)); }
 .heat-legend .swatch { width: 12px; height: 12px; display: inline-block; border-radius: 2px; }
-.swatch--nodata { background: var(--color-gray-50); box-shadow: inset 0 0 0 1px var(--color-gray-200); }
-.swatch--interp { background-color: var(--heat-mid); background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0 2px, transparent 2px 5px); }
-.swatch--mark { box-shadow: inset 0 0 0 2px var(--color-gray-900); }
+.swatch--mark { box-shadow: inset 0 0 0 2px var(--color-white), 0 0 0 1px var(--color-gray-400); }
 .legend-switches { display: inline-flex; align-items: center; gap: var(--space-4); padding-right: var(--space-4); border-right: var(--border-width) solid var(--color-gray-200); }
 .legend-switch { display: inline-flex; align-items: center; gap: var(--space-1-5); margin: 0; color: var(--color-gray-900); font-weight: var(--font-weight-semibold); cursor: pointer; }
 .legend-switch .toggle-switch { transform: scale(0.8); }
 .export-sheet .legend-switches { display: none; }
-.profile-legend { margin: var(--space-1-5) 0 0; font-size: var(--font-size-caption); color: var(--color-gray-600); }
-.profile-legend b { color: var(--color-gray-900); }
+.profile-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-10); margin-top: var(--space-4); font-size: var(--font-size-body); color: var(--color-gray-700); }
+.profile-legend__title { font-weight: var(--font-weight-semibold); color: var(--color-gray-900); }
+.profile-legend__item { display: inline-flex; align-items: center; gap: var(--space-2); }
+.profile-legend__item b { color: var(--color-gray-900); font-variant-numeric: tabular-nums; }
+.profile-legend__swatch { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 22px; border-radius: var(--radius-md);
+    font-style: normal; font-weight: 700; color: var(--color-gray-900); box-shadow: inset 0 0 0 1px var(--color-gray-200); }
 
-/* Tooltip, copied from web/src/components/tooltip */
-.emasys-tooltip { position: fixed; z-index: 2300; max-width: 260px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-lg);
-    background: var(--color-gray-900); color: var(--color-white); font-size: var(--font-size-caption); line-height: var(--line-height-normal);
-    box-shadow: var(--elevation-tooltip); pointer-events: none; }
-.emasys-tooltip strong { font-size: var(--font-size-body); }
-.emasys-tooltip .muted { color: var(--color-gray-400); }
+/* Colour range: two handles over the heat scale, and the same two values as text fields */
+.range-control { display: inline-flex; align-items: center; gap: var(--space-2); }
+.range-control__label { color: var(--color-gray-900); font-weight: var(--font-weight-semibold); }
+.range-input { width: 64px; height: 26px; padding: 0 var(--space-1-5); border: var(--border-width) solid var(--color-gray-300); border-radius: var(--radius-md);
+    font-size: var(--font-size-caption); text-align: right; font-variant-numeric: tabular-nums; color: var(--color-gray-900); }
+.range-input:focus { outline: 0; border-color: var(--color-primary); }
+.range-slider { position: relative; width: 220px; height: 20px; }
+.range-slider__track { position: absolute; left: 7px; right: 7px; top: 6px; height: 8px; border-radius: 2px; }
+.range-slider input[type=range] { position: absolute; inset: 0; width: 100%; height: 20px; margin: 0; padding: 0; background: none;
+    pointer-events: none; -webkit-appearance: none; appearance: none; }
+.range-slider input[type=range]::-webkit-slider-runnable-track { height: 20px; background: none; }
+.range-slider input[type=range]::-moz-range-track { height: 20px; background: none; }
+.range-slider input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 14px; height: 14px; margin-top: 3px;
+    border-radius: 50%; background: var(--color-white); border: var(--border-width-thick) solid var(--color-gray-700); box-shadow: var(--elevation-dropdown); cursor: grab; }
+.range-slider input[type=range]::-moz-range-thumb { pointer-events: auto; width: 10px; height: 10px; border-radius: 50%; background: var(--color-white);
+    border: var(--border-width-thick) solid var(--color-gray-700); box-shadow: var(--elevation-dropdown); cursor: grab; }
+.range-slider input[type=range]:focus-visible::-webkit-slider-thumb { border-color: var(--color-primary); }
+.range-reset { padding: 0; border: 0; background: none; font-size: var(--font-size-caption); color: var(--color-primary); cursor: pointer; }
+.range-reset:hover { text-decoration: underline; }
+/* The picture shows the scale as plain text, without the handles and fields */
+.heat-legend > .scale-static { display: none; }
+.export-sheet .heat-legend > .scale-static { display: inline-flex; }
+.export-sheet .heat-legend > .range-control { display: none; }
 
 /* Modal, the shape of web/src/components/modal */
 /* Above the sidebar, which sits at z-index 2001 in the app CSS */
 .modal--active { z-index: 2100; display: block; position: fixed; inset: 0; overflow: hidden auto; }
 .modal__backdrop { background: var(--color-black); opacity: 0.5; z-index: -1; position: fixed; inset: 0; }
 .modal--active .modal-dialog { max-width: min(1200px, calc(100vw - 32px)); margin: 40px auto; }
+.export-item + .export-item { margin-top: var(--space-4); padding-top: var(--space-4); border-top: var(--border-width) solid var(--color-gray-200); }
+.export-item__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-2); }
+.export-item__head h5 { margin: 0; font-weight: var(--font-weight-semibold); color: var(--color-gray-900); }
 .export-preview { border: var(--border-width) solid var(--color-gray-200); max-width: 100%; display: block; }
 .export-note { font-size: var(--font-size-caption); color: var(--color-gray-500); margin: var(--space-2) 0 0; }
 
@@ -208,6 +239,9 @@ table.heat { width: 100%; min-width: 860px; table-layout: fixed; border-collapse
 <script>
 const { createApp, reactive, computed, ref, nextTick, onMounted, onBeforeUnmount } = Vue;
 
+// The private artifact viewer blocks downloads, so its copy sets this to false.
+const CAN_DOWNLOAD = true;
+
 /* ---------- Calendar ---------- */
 
 const MONTH_NAMES = ['Siječanj', 'Veljača', 'Ožujak', 'Travanj', 'Svibanj', 'Lipanj', 'Srpanj', 'Kolovoz', 'Rujan', 'Listopad', 'Studeni', 'Prosinac'];
@@ -226,7 +260,10 @@ const monthLabel = (index) => { const m = fromIndex(index); return `${MONTH_NAME
 const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
 const weekdayOf = (year, month, day) => (new Date(year, month - 1, day).getDay() + 6) % 7;
 const pad = (n) => String(n).padStart(2, '0');
-const hourRange = (h) => `${pad(h)}-${pad(h + 1)}`;
+// Each row carries the hour its interval ends, as legacy labels them: 01 to 23, then 00.
+const hourLabel = (h) => pad((h + 1) % 24);
+const HOURS = Array.from({ length: 24 }, (_, h) => h);
+const normalizeForSearch = (text) => text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
 const isHoliday = (y, m, d) => HOLIDAYS.has(`${pad(m)}-${pad(d)}`) || HOLIDAYS.has(`${y}-${pad(m)}-${pad(d)}`);
 
 /* ---------- Quantities and meters ---------- */
@@ -235,11 +272,27 @@ const QUANTITIES = {
     'water': { title: 'Voda', unit: 'm³', kind: 'consumption', meters: [
         { id: 'w1', location: 'Upravna zgrada', name: 'Glavno brojilo vode', scale: 1 },
         { id: 'w2', location: 'Upravna zgrada', name: 'Kuhinja i restoran', scale: 0.45 },
-        { id: 'w3', location: 'Skladište Sesvete', name: 'Glavno brojilo vode', scale: 0.3 } ] },
+        { id: 'w4', location: 'Upravna zgrada', name: 'Sanitarni čvor, 1. kat', scale: 0.2 },
+        { id: 'w5', location: 'Upravna zgrada', name: 'Sanitarni čvor, 2. kat', scale: 0.18 },
+        { id: 'w6', location: 'Upravna zgrada', name: 'Rashladni toranj', scale: 0.35 },
+        { id: 'w3', location: 'Skladište Sesvete', name: 'Glavno brojilo vode', scale: 0.3 },
+        { id: 'w7', location: 'Skladište Sesvete', name: 'Pranje vozila', scale: 0.25 },
+        { id: 'w8', location: 'Poslovnica Split', name: 'Glavno brojilo vode', scale: 0.4 },
+        { id: 'w9', location: 'Poslovnica Rijeka', name: 'Glavno brojilo vode', scale: 0.38 },
+        { id: 'p1', location: 'Upravna zgrada', name: 'Tlak na ulazu', scale: 1, quantity: 'pressure-water' },
+        { id: 'v1', location: 'Upravna zgrada', name: 'Voda bez kuhinje', scale: 0.55, group: 'Virtualna brojila' },
+        { id: 'f1', location: '', name: 'Zagreb', scale: 0, quantity: 'weather' },
+        { id: 'f2', location: '', name: 'Split', scale: 0, quantity: 'weather' } ] },
     'electricity': { title: 'Električna energija', unit: 'kWh', kind: 'consumption', meters: [
         { id: 'e1', location: 'Upravna zgrada', name: 'Glavno brojilo', scale: 1 },
         { id: 'e2', location: 'Upravna zgrada', name: 'Klimatizacija', scale: 0.35 },
-        { id: 'e3', location: 'Skladište Sesvete', name: 'Glavno brojilo', scale: 0.6 } ] },
+        { id: 'e4', location: 'Upravna zgrada', name: 'Rasvjeta garaže', scale: 0.15 },
+        { id: 'e3', location: 'Skladište Sesvete', name: 'Glavno brojilo', scale: 0.6 },
+        { id: 'e5', location: 'Skladište Sesvete', name: 'Punionica viličara', scale: 0.25 },
+        { id: 'e6', location: 'Poslovnica Split', name: 'Glavno brojilo', scale: 0.4 },
+        { id: 'v2', location: 'Upravna zgrada', name: 'Potrošnja bez klimatizacije', scale: 0.65, group: 'Virtualna brojila' },
+        { id: 'f3', location: '', name: 'Zagreb', scale: 0, quantity: 'weather' },
+        { id: 'f4', location: '', name: 'Split', scale: 0, quantity: 'weather' } ] },
     'heat': { title: 'Toplina', unit: 'kWh', kind: 'consumption', meters: [
         { id: 'h1', location: 'Upravna zgrada', name: 'Toplinska podstanica', scale: 1 } ] },
     'gas': { title: 'Plin', unit: 'm³', kind: 'consumption', meters: [
@@ -249,8 +302,14 @@ const QUANTITIES = {
         { id: 't2', location: 'Upravna zgrada', name: 'Sala za sastanke', scale: 0.6 } ] },
     'co2-in': { title: 'CO2', unit: 'ppm', kind: 'average', meters: [
         { id: 'c1', location: 'Upravna zgrada', name: 'Ured 2.14', scale: 1 },
-        { id: 'c2', location: 'Upravna zgrada', name: 'Sala za sastanke', scale: 1.35 } ] }
+        { id: 'c2', location: 'Upravna zgrada', name: 'Sala za sastanke', scale: 1.35 } ] },
+    // Only reachable through another page's meter list, as legacy lists them there.
+    'pressure-water': { title: 'Tlak vode', unit: 'bar', kind: 'average', meters: [] },
+    'weather': { title: 'Vremenska prognoza', unit: '°C', kind: 'average', meters: [] }
 };
+// A meter can carry its own quantity, like the pressure meters and the forecast cities on the water page.
+const quantityKeyOf = (meter, pageQuantityKey) => meter.quantity || pageQuantityKey;
+const meterName = (meter) => (meter.location ? `${meter.location}, ${meter.name}` : meter.name);
 
 /* ---------- Invented readings ---------- */
 
@@ -302,6 +361,12 @@ function readingFor(quantityKey, meter, month, isWorkday, hour, random) {
             const winter = (isWorkday ? SHAPES.tempWinterWork : SHAPES.tempWinterFree)[hour];
             const summer = (isWorkday ? SHAPES.tempSummerWork : SHAPES.tempSummerFree)[hour];
             return heating * winter + (1 - heating) * summer + meter.scale + (random() - 0.5) * 0.5;
+        }
+        case 'pressure-water':
+            return 3.6 - (isWorkday ? SHAPES.waterWork : SHAPES.waterFree)[hour] * 0.15 + (random() - 0.5) * 0.1;
+        case 'weather': {
+            const base = heating * 4 + (1 - heating) * 24;
+            return base + 5 * Math.sin(((hour - 9) / 24) * 2 * Math.PI) + (random() - 0.5) * 2;
         }
         case 'co2-in': {
             const shape = (isWorkday ? SHAPES.co2Work : SHAPES.co2Free)[hour];
@@ -365,9 +430,10 @@ function interpolate(days) {
 
 /* ---------- What the backend would return for one month ---------- */
 
-const PROFILE_COLORS = ['#2675b8', '#23c6c8', '#676a6c', '#0dace3'];
-// Valentina's number: below this share of readings no profiles are computed.
-const PROFILE_MIN_COVERAGE = 0.9;
+// A profile's level is ordered from low to high, so its shade runs from light to dark grey.
+const PROFILE_SHADES = { low: 'var(--profile-low)', mid: 'var(--profile-mid)', high: 'var(--profile-high)' };
+// Josip's number: profiles need 22 % of the month's hours read, about 7 days.
+const PROFILE_MIN_COVERAGE = 0.22;
 
 // Splits the 24 hourly averages into up to four runs of consecutive hours, each run as
 // even as possible. Stands in for the backend's profile algorithm.
@@ -402,8 +468,8 @@ function findProfiles(averages, kind) {
         const part = averages.slice(from, to);
         const mean = part.reduce((s, v) => s + v, 0) / part.length;
         const share = high === low ? 0.5 : (mean - low) / (high - low);
-        const level = share < 0.33 ? words.low : share > 0.66 ? words.high : words.mid;
-        return { name: String.fromCharCode(65 + i), from, to, level, mean, color: PROFILE_COLORS[i], tint: tint(PROFILE_COLORS[i], 0.14) };
+        const levelKey = share < 0.33 ? 'low' : share > 0.66 ? 'high' : 'mid';
+        return { name: String.fromCharCode(65 + i), from, to, level: words[levelKey], mean, tint: PROFILE_SHADES[levelKey] };
     });
 }
 
@@ -411,10 +477,11 @@ function buildMonth(quantityKey, meter, index, withInterpolation) {
     const quantity = QUANTITIES[quantityKey];
     const raw = rawMonth(quantityKey, meter, index);
     const days = withInterpolation ? interpolate(raw.days) : raw.days;
+    // Interpolated hours count as read, because interpolation exists so the user does not see the gap.
     let max = null, min = null, measured = 0;
     days.forEach((d) => d.hours.forEach((h, hour) => {
         if (h.value === null) return;
-        if (!h.isInterpolated) measured++;
+        measured++;
         if (!max || h.value > max.value) max = { value: h.value, day: d.day, hour };
         if (!min || h.value < min.value) min = { value: h.value, day: d.day, hour };
     }));
@@ -468,10 +535,6 @@ function heatColor(share) {
     const rgb = [0, 1, 2].map((k) => Math.round(HEAT_STOPS[i][k] + (HEAT_STOPS[i + 1][k] - HEAT_STOPS[i][k]) * f));
     return `rgb(${rgb.join(',')})`;
 }
-function tint(hex, alpha) {
-    const n = parseInt(hex.slice(1), 16);
-    return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
-}
 
 /* ---------- Components ---------- */
 
@@ -515,6 +578,80 @@ const MonthPicker = {
         </div></div>`
 };
 
+const MeterSelect = {
+    props: { groups: Object, modelValue: String, id: String, invalid: Boolean },
+    emits: ['update:modelValue'],
+    setup(props, { emit }) {
+        const open = ref(false);
+        const query = ref('');
+        const active = ref(0);
+        const root = ref(null);
+        const meters = computed(() => Object.entries(props.groups).flatMap(([group, list]) => list.map((m) => ({ ...m, group }))));
+        const selected = computed(() => meters.value.find((m) => m.id === props.modelValue) || null);
+        const label = (m) => m.label;
+        const matches = computed(() => {
+            const search = normalizeForSearch(query.value.trim());
+            return meters.value.filter((m) => !search || normalizeForSearch(label(m)).includes(search));
+        });
+        // The matches grouped again, each keeping its place in the flat list for the arrow keys.
+        const shownGroups = computed(() => {
+            const groups = [];
+            matches.value.forEach((meter, index) => {
+                let group = groups.find((g) => g.title === meter.group);
+                if (!group) { group = { title: meter.group, items: [] }; groups.push(group); }
+                group.items.push({ meter, index });
+            });
+            return groups;
+        });
+        const inputText = computed(() => (open.value ? query.value : selected.value ? label(selected.value) : ''));
+        const placeholder = computed(() => (selected.value ? label(selected.value) : 'Odaberite uređaj'));
+
+        function openList() {
+            if (open.value) return;
+            open.value = true;
+            query.value = '';
+            active.value = Math.max(0, matches.value.findIndex((m) => m.id === props.modelValue));
+        }
+        function pick(meter) {
+            emit('update:modelValue', meter.id);
+            open.value = false;
+        }
+        function onInput(event) {
+            query.value = event.target.value;
+            open.value = true;
+            active.value = 0;
+        }
+        function moveActive(step) {
+            openList();
+            active.value = Math.min(matches.value.length - 1, Math.max(0, active.value + step));
+            nextTick(() => { const item = root.value && root.value.querySelector('.dropdown-item.is-active'); if (item) item.scrollIntoView({ block: 'nearest' }); });
+        }
+        function onKey(event) {
+            if (event.key === 'ArrowDown') { event.preventDefault(); moveActive(1); }
+            if (event.key === 'ArrowUp') { event.preventDefault(); moveActive(-1); }
+            if (event.key === 'Enter' && open.value) { event.preventDefault(); if (matches.value[active.value]) pick(matches.value[active.value]); }
+            if (event.key === 'Escape' || event.key === 'Tab') open.value = false;
+        }
+        const onOutside = (e) => { if (root.value && !root.value.contains(e.target)) open.value = false; };
+        onMounted(() => document.addEventListener('mousedown', onOutside));
+        onBeforeUnmount(() => document.removeEventListener('mousedown', onOutside));
+        return { open, query, active, root, matches, shownGroups, inputText, placeholder, openList, pick, onInput, onKey };
+    },
+    template: `<div class="meter-select" ref="root">
+        <input :id="id" type="text" class="form-control meter-select__input" :class="{ 'is-invalid': invalid }" role="combobox" autocomplete="off"
+            :aria-expanded="open" :placeholder="placeholder" :value="inputText" @focus="openList" @click="openList" @input="onInput" @keydown="onKey">
+        <i class="fa fa-caret-down meter-select__caret"></i>
+        <div v-if="open" class="dropdown-menu show meter-select__menu" role="listbox">
+            <template v-for="group in shownGroups" :key="group.title">
+                <h6 class="dropdown-header">{{ group.title }}</h6>
+                <button v-for="item in group.items" :key="item.meter.id" type="button" class="dropdown-item" role="option"
+                    :class="{ 'is-active': item.index === active, 'is-selected': item.meter.id === modelValue }"
+                    :aria-selected="item.meter.id === modelValue" @mousedown.prevent="pick(item.meter)">{{ item.meter.label }}</button>
+            </template>
+            <p v-if="!matches.length" class="meter-select__empty">Nijedan uređaj ne odgovara upisanom tekstu.</p>
+        </div></div>`
+};
+
 const ExportMenu = {
     props: { disabled: Boolean },
     emits: ['excel', 'image'],
@@ -539,9 +676,9 @@ const ExportMenu = {
 };
 
 const MonthCard = {
-    props: { month: Object, showProfiles: Boolean, withInterpolation: Boolean, showValues: Boolean },
+    props: { month: Object, showProfiles: Boolean, range: Object },
     components: { ToggleSwitch },
-    emits: ['tip', 'untip', 'toggle-values', 'toggle-profiles'],
+    emits: ['toggle-profiles', 'update:range'],
     setup(props, { emit }) {
         const decimals = computed(() => decimalsFor(props.month));
         const totalDecimals = computed(() => (props.month.quantity.kind === 'consumption' ? (decimals.value > 1 ? 1 : 0) : decimals.value));
@@ -551,92 +688,92 @@ const MonthCard = {
         const fmtTotal = (v) => (v === null ? '' : formatNumber(v, totalDecimals.value));
         const profiles = computed(() => (props.showProfiles ? props.month.profiles : null));
         const profileOf = (hour) => (profiles.value ? profiles.value.find((p) => hour >= p.from && hour < p.to) : null);
+        // The darkest text keeps the hour labels and averages readable on the darkest grey.
+        const profileShade = (hour) => { const p = profileOf(hour); return p ? { backgroundColor: p.tint, color: 'var(--color-gray-900)' } : null; };
         const monthNumber = computed(() => fromIndex(props.month.index).month);
-        const dateText = (d) => `${WEEKDAYS[d.weekday]} ${pad(d.day)}.${pad(monthNumber.value)}.${fromIndex(props.month.index).year}`;
-        const hasMissing = computed(() => props.month.days.some((d) => d.hours.some((h) => h.value === null)));
-
-        // With profiles on, a small gap between two profiles splits the hours into groups.
-        const rows = computed(() => {
-            const list = [];
-            for (let hour = 0; hour < 24; hour++) {
-                const p = profileOf(hour);
-                if (p && hour > 0 && p.from === hour) list.push({ kind: 'gap', key: 'gap' + hour });
-                list.push({ kind: 'hour', hour, key: 'h' + hour });
-            }
-            return list;
-        });
         const columnCount = computed(() => props.month.days.length + 3 + (profiles.value ? 1 : 0));
 
-        const heatSpan = computed(() => {
-            const { max, min } = props.month;
-            return max && min && max.value !== min.value ? max.value - min.value : 1;
-        });
+        // The colour scale runs between the two values the user set, or between the month's min and max.
+        // Values below the low end are fully green, values above the high end fully red.
+        const scale = computed(() => props.range || (props.month.min ? { low: props.month.min.value, high: props.month.max.value } : null));
+        const colorOf = (v) => {
+            const span = scale.value.high - scale.value.low;
+            return heatColor(span > 0 ? (v - scale.value.low) / span : 0.5);
+        };
         const isMax = (d, hour) => props.month.max && props.month.max.day === d.day && props.month.max.hour === hour;
         const isMin = (d, hour) => props.month.min && props.month.min.day === d.day && props.month.min.hour === hour;
         function cellClass(d, hour) {
-            const h = d.hours[hour];
-            return { cell: true, nodata: h.value === null, interp: h.isInterpolated, max: isMax(d, hour), min: isMin(d, hour) };
+            return { cell: true, nodata: d.hours[hour].value === null, max: isMax(d, hour), min: isMin(d, hour) };
         }
         function cellStyle(d, hour) {
             const v = d.hours[hour].value;
-            return v === null ? null : { backgroundColor: heatColor((v - props.month.min.value) / heatSpan.value) };
+            return v === null ? null : { backgroundColor: colorOf(v) };
         }
 
-        function tipCell(event, d, hour) {
-            const h = d.hours[hour];
-            const notes = [];
-            const value = h.value === null ? (h.isFuture ? 'Još nema očitanja' : 'Nema podataka') : `${fmt(h.value)} ${unit.value}`;
-            if (h.isInterpolated) notes.push('Interpolirana vrijednost');
-            if (isMax(d, hour)) notes.push('Najveća vrijednost u mjesecu');
-            if (isMin(d, hour)) notes.push('Najmanja vrijednost u mjesecu');
-            const p = profileOf(hour);
-            if (p) notes.push(`Profil ${p.name}, ${p.level}`);
-            emit('tip', event, { lines: [`${dateText(d)}, ${pad(hour)}:00-${pad(hour + 1)}:00`], value, notes });
+        // The slider runs from 0 for consumption, or from the month's lowest value otherwise, up to the month's highest value.
+        // The text fields take any value, and a handle past the slider's end stays at the end.
+        const step = computed(() => 10 ** -decimals.value);
+        const bounds = computed(() => {
+            const { min, max } = props.month;
+            return min ? { low: isConsumption.value ? Math.min(0, min.value) : min.value, high: max.value } : null;
+        });
+        const sliderValue = (v) => Math.min(bounds.value.high, Math.max(bounds.value.low, v));
+        const sliderPercent = (v) => {
+            const span = bounds.value.high - bounds.value.low;
+            return span > 0 ? ((sliderValue(v) - bounds.value.low) / span) * 100 : 0;
+        };
+        const trackStyle = computed(() => {
+            const low = sliderPercent(scale.value.low);
+            const high = sliderPercent(scale.value.high);
+            return { background: `linear-gradient(90deg, var(--heat-low) 0%, var(--heat-low) ${low}%, var(--heat-mid) ${(low + high) / 2}%, var(--heat-high) ${high}%, var(--heat-high) 100%)` };
+        });
+        const hasCustomRange = computed(() => !!props.range);
+        function setLow(value) {
+            const high = scale.value.high;
+            emit('update:range', { low: Math.min(value, high - step.value), high });
         }
-        function tipAverage(event, hour) {
-            const v = props.month.hourlyAverages[hour];
-            const count = props.month.days.filter((d) => d.hours[hour].value !== null).length;
-            emit('tip', event, { lines: [`Prosjek za ${pad(hour)}:00-${pad(hour + 1)}:00`], value: v === null ? 'Nema podataka' : `${fmt(v)} ${unit.value}`, notes: [`Iz ${count} dana s podacima`] });
+        function setHigh(value) {
+            const low = scale.value.low;
+            emit('update:range', { low, high: Math.max(value, low + step.value) });
         }
-        function tipDay(event, d, i) {
-            const v = props.month.dayValues[i];
-            const label = isConsumption.value ? 'Ukupno za dan' : 'Prosjek dana';
-            emit('tip', event, { lines: [dateText(d)], value: v === null ? 'Nema podataka' : `${label}: ${fmtTotal(v)} ${unit.value}`, notes: [] });
+        // Accepts "2", "2,5" and "1.234,5", the way Croatian numbers are typed.
+        function parseTyped(text) {
+            const clean = text.trim().includes(',') ? text.trim().replace(/\./g, '').replace(',', '.') : text.trim();
+            const value = Number(clean);
+            return clean !== '' && Number.isFinite(value) ? value : null;
         }
-        function tipTotal(event) {
-            const v = props.month.dailyAverage;
-            const label = isConsumption.value ? 'Prosječna dnevna potrošnja' : 'Prosjek mjeseca';
-            emit('tip', event, { lines: [label], value: v === null ? 'Nema podataka' : `${fmtTotal(v)} ${unit.value}`, notes: [] });
+        function onTyped(end, event) {
+            const value = parseTyped(event.target.value);
+            if (value !== null) (end === 'low' ? setLow : setHigh)(value);
+            nextTick(() => { event.target.value = fmt(scale.value[end]); });
         }
-        function tipProfile(event, p) {
-            emit('tip', event, { lines: [`Profil ${p.name}, ${pad(p.from)}:00-${pad(p.to)}:00`], value: `Prosjek ${fmt(p.mean)} ${unit.value}`, notes: [p.level] });
-        }
+        const resetRange = () => emit('update:range', null);
+
         // Where the max or min cell sits, in the words of the column and row headers.
         const extremePlace = (extreme) => {
             const d = props.month.days[extreme.day - 1];
-            return `${WEEKDAYS[d.weekday]} ${pad(extreme.day)}.${pad(monthNumber.value)}., ${hourRange(extreme.hour)} h`;
+            return `${WEEKDAYS[d.weekday]} ${pad(extreme.day)}.${pad(monthNumber.value)}., ${hourLabel(extreme.hour)} h`;
         };
-        const maxColor = heatColor(1);
-        const minColor = heatColor(0);
-        return { fmt, fmtTotal, unit, isConsumption, profiles, profileOf, rows, columnCount, hasMissing, extremePlace, maxColor, minColor,
-            cellClass, cellStyle, tipCell, tipAverage, tipDay, tipTotal, tipProfile, hourRange, pad, WEEKDAYS, Math };
+        return { fmt, fmtTotal, unit, isConsumption, profiles, profileOf, profileShade, columnCount, scale, colorOf, extremePlace,
+            cellClass, cellStyle, step, bounds, sliderValue, sliderPercent, trackStyle, hasCustomRange, setLow, setHigh, onTyped, resetRange,
+            hourLabel, meterName, pad, HOURS, WEEKDAYS };
     },
     template: `<div class="ibox month-card">
         <div class="ibox-title">
             <h5>{{ month.title }}</h5>
-            <span class="month-card__meter">{{ month.meter.location }}, {{ month.meter.name }} ({{ unit }})</span>
-            <span class="month-card__total">{{ isConsumption ? 'Ukupno' : 'Prosječno očitanje' }}: <strong>{{ month.monthTotal === null ? '-/-' : fmtTotal(month.monthTotal) + ' ' + unit }}</strong></span>
+            <span class="month-card__meter">{{ meterName(month.meter) }} ({{ unit }})</span>
+            <span class="month-card__total">{{ isConsumption ? 'Ukupna potrošnja' : 'Prosječno očitanje' }}: <strong>{{ month.monthTotal === null ? '-/-' : fmtTotal(month.monthTotal) + ' ' + unit }}</strong></span>
         </div>
         <div class="ibox-content">
             <div v-if="month.coverage < 0.97" class="alert alert-warning coverage-alert" role="status">
                 <i class="fa fa-exclamation-triangle"></i>
                 <div>
                     Očitanja postoje za {{ month.daysWithData }} od {{ month.days.length }} dana, pa prosjeci vrijede samo za te dane.
-                    <template v-if="showProfiles && !month.profiles">Dnevni profili se računaju tek kad mjesec ima barem 90 % očitanja.</template>
+                    <template v-if="showProfiles && !month.profiles">Dnevni profili se računaju tek kad mjesec ima barem 22 % očitanja, otprilike 7 dana.</template>
                 </div>
             </div>
             <div class="heat-scroll">
-                <table class="heat" :class="{ 'no-values': !showValues }" @mouseleave="$emit('untip')">
+                <table class="heat">
                     <colgroup>
                         <col v-if="profiles" class="c-profile">
                         <col class="c-hour">
@@ -654,27 +791,22 @@ const MonthCard = {
                         </tr>
                     </thead>
                     <tbody>
-                        <template v-for="r in rows" :key="r.key">
-                            <tr v-if="r.kind === 'gap'" class="row-gap"><td :colspan="columnCount"></td></tr>
-                            <tr v-else>
-                                <td v-if="profiles && profileOf(r.hour).from === r.hour" class="profile"
-                                    :rowspan="profileOf(r.hour).to - profileOf(r.hour).from"
-                                    @mouseenter="tipProfile($event, profileOf(r.hour))">{{ profileOf(r.hour).name }}</td>
-                                <th class="hour hour-l">{{ hourRange(r.hour) }}</th>
-                                <td class="avg" @mouseenter="tipAverage($event, r.hour)">{{ fmt(month.hourlyAverages[r.hour]) }}</td>
-                                <td v-for="d in month.days" :key="d.day" :class="cellClass(d, r.hour)" :style="cellStyle(d, r.hour)"
-                                    :data-gap="d.day === month.gapDay && r.hour === 13 ? 'true' : null"
-                                    @mouseenter="tipCell($event, d, r.hour)">{{ fmt(d.hours[r.hour].value) }}</td>
-                                <th class="hour hour-r">{{ hourRange(r.hour) }}</th>
-                            </tr>
-                        </template>
+                        <tr v-for="hour in HOURS" :key="hour">
+                            <td v-if="profiles && profileOf(hour).from === hour" class="profile"
+                                :rowspan="profileOf(hour).to - profileOf(hour).from" :style="profileShade(hour)">{{ profileOf(hour).name }}</td>
+                            <th class="hour hour-l" :style="profileShade(hour)">{{ hourLabel(hour) }}</th>
+                            <td class="avg" :style="profileShade(hour)">{{ fmt(month.hourlyAverages[hour]) }}</td>
+                            <td v-for="d in month.days" :key="d.day" :class="cellClass(d, hour)" :style="cellStyle(d, hour)"
+                                :data-gap="d.day === month.gapDay && hour === 13 ? 'true' : null">{{ fmt(d.hours[hour].value) }}</td>
+                            <th class="hour hour-r" :style="profileShade(hour)">{{ hourLabel(hour) }}</th>
+                        </tr>
                     </tbody>
                     <tfoot>
                         <tr>
                             <th v-if="profiles"></th>
-                            <th class="hour hour-l" :title="isConsumption ? 'Ukupno po danu' : 'Prosjek po danu'">{{ isConsumption ? '∑' : 'Ø' }}</th>
-                            <td class="month-total" @mouseenter="tipTotal($event)">{{ fmtTotal(month.dailyAverage) }}</td>
-                            <td v-for="(d, i) in month.days" :key="'s' + d.day" :class="{ weekend: d.isWeekend }" @mouseenter="tipDay($event, d, i)">{{ fmtTotal(month.dayValues[i]) }}</td>
+                            <th class="hour hour-l">{{ isConsumption ? '∑' : 'Ø' }}</th>
+                            <td class="month-total">{{ fmtTotal(month.dailyAverage) }}</td>
+                            <td v-for="(d, i) in month.days" :key="'s' + d.day" :class="{ weekend: d.isWeekend }">{{ fmtTotal(month.dayValues[i]) }}</td>
                             <th class="hour hour-r">{{ isConsumption ? '∑' : 'Ø' }}</th>
                         </tr>
                     </tfoot>
@@ -686,21 +818,34 @@ const MonthCard = {
                         <toggle-switch :id="'profiles-' + month.index" :model-value="showProfiles" aria-label="Dnevni profili"
                             @update:model-value="$emit('toggle-profiles', $event)"></toggle-switch> Dnevni profili
                     </label>
-                    <label class="legend-switch" :for="'values-' + month.index">
-                        <toggle-switch :id="'values-' + month.index" :model-value="showValues" aria-label="Brojevi u ćelijama"
-                            @update:model-value="$emit('toggle-values', $event)"></toggle-switch> Brojevi u ćelijama
-                    </label>
                 </span>
-                <span>{{ month.min ? fmt(month.min.value) : '' }} <i class="scale"></i> {{ month.max ? fmt(month.max.value) + ' ' + unit : '' }}</span>
-                <span v-if="month.max"><i class="swatch swatch--mark" :style="{ backgroundColor: maxColor }"></i> Najveća: {{ fmt(month.max.value) }} {{ unit }}, {{ extremePlace(month.max) }}</span>
-                <span v-if="month.min"><i class="swatch swatch--mark" :style="{ backgroundColor: minColor }"></i> Najmanja: {{ fmt(month.min.value) }} {{ unit }}, {{ extremePlace(month.min) }}</span>
-                <span v-if="hasMissing"><i class="swatch swatch--nodata"></i> Nema podataka</span>
-                <span v-if="withInterpolation"><i class="swatch swatch--interp"></i> Interpolirano</span>
+                <span v-if="scale" class="range-control">
+                    <span class="range-control__label">Raspon boja</span>
+                    <input type="text" inputmode="decimal" class="range-input" :value="fmt(scale.low)" aria-label="Donja granica raspona boja"
+                        @change="onTyped('low', $event)" @keydown.enter="$event.target.blur()">
+                    <span class="range-slider">
+                        <i class="range-slider__track" :style="trackStyle"></i>
+                        <input type="range" :min="bounds.low" :max="bounds.high" :step="step" :value="sliderValue(scale.low)" aria-label="Donja granica raspona boja"
+                            :style="{ zIndex: sliderPercent(scale.low) > 90 ? 3 : 1 }" @input="setLow(Number($event.target.value))">
+                        <input type="range" :min="bounds.low" :max="bounds.high" :step="step" :value="sliderValue(scale.high)" aria-label="Gornja granica raspona boja"
+                            style="z-index: 2" @input="setHigh(Number($event.target.value))">
+                    </span>
+                    <input type="text" inputmode="decimal" class="range-input" :value="fmt(scale.high)" aria-label="Gornja granica raspona boja"
+                        @change="onTyped('high', $event)" @keydown.enter="$event.target.blur()">
+                    <span>{{ unit }}</span>
+                    <button v-if="hasCustomRange" type="button" class="range-reset" @click="resetRange">Vrati na min i max</button>
+                </span>
+                <span v-if="scale" class="scale-static">{{ fmt(scale.low) }} <i class="scale"></i> {{ fmt(scale.high) + ' ' + unit }}</span>
+                <span v-if="month.max"><i class="swatch swatch--mark" :style="{ backgroundColor: colorOf(month.max.value) }"></i> Najveća: {{ fmt(month.max.value) }} {{ unit }}, {{ extremePlace(month.max) }}</span>
+                <span v-if="month.min"><i class="swatch swatch--mark" :style="{ backgroundColor: colorOf(month.min.value) }"></i> Najmanja: {{ fmt(month.min.value) }} {{ unit }}, {{ extremePlace(month.min) }}</span>
             </div>
-            <p v-if="profiles" class="profile-legend">
-                Dnevni profili:
-                <template v-for="(p, i) in profiles" :key="p.name"><b>{{ p.name }}</b> {{ pad(p.from) }}-{{ pad(p.to) }} h, {{ p.level }}<template v-if="i < profiles.length - 1">; </template></template>
-            </p>
+            <div v-if="profiles" class="profile-legend">
+                <span class="profile-legend__title">Dnevni profili</span>
+                <span v-for="p in profiles" :key="p.name" class="profile-legend__item">
+                    <i class="profile-legend__swatch" :style="{ backgroundColor: p.tint }">{{ p.name }}</i>
+                    <span><b>{{ p.to - p.from === 1 ? hourLabel(p.from) : hourLabel(p.from) + '-' + hourLabel(p.to - 1) }} h</b>, {{ p.level }}</span>
+                </span>
+            </div>
         </div>
     </div>`
 };
@@ -735,45 +880,51 @@ const SIDEBAR = [
 const SCREENS = [
     { id: 'SCR-01', name: 'Prazna stranica', hint: 'Dolazak iz izbornika, još nema tablice' },
     { id: 'SCR-02', name: 'Jedan mjesec', hint: 'Tablica sa svim dodacima iz zadatka' },
-    { id: 'SCR-03', name: 'Dnevni profili', hint: 'Prekidač ispod tablice, profili A do D' },
+    { id: 'SCR-03', name: 'Dnevni profili', hint: 'Sati i prosjeci zasjenjeni po profilu, A do D' },
     { id: 'SCR-04', name: 'Više mjeseci', hint: 'Tri mjeseca, zadnji je nepotpun' },
-    { id: 'SCR-05', name: 'Interpolacija', hint: 'Rupa u podacima popunjena i označena' },
+    { id: 'SCR-05', name: 'Interpolacija', hint: 'Rupa popunjena, izgleda kao i ostala polja' },
     { id: 'SCR-06', name: 'Temperatura', hint: 'Veličina bez potrošnje, red prosjeka' },
-    { id: 'SCR-07', name: 'Izvoz slike', hint: 'PNG svih nacrtanih mjeseci sa svim oznakama' }
+    { id: 'SCR-07', name: 'Izvoz slika', hint: 'Jedan PNG za svaki nacrtani mjesec' },
+    { id: 'SCR-08', name: 'Raspon boja', hint: 'Korisnik postavi boje od 0 do 2 m³' }
 ];
 
 /* ---------- App ---------- */
 
 createApp({
-    components: { ToggleSwitch, MonthPicker, MonthCard, ExportMenu },
+    components: { ToggleSwitch, MonthPicker, MonthCard, ExportMenu, MeterSelect },
     setup() {
         const state = reactive({
             quantity: 'water',
             meterId: '',
-            firstMonth: monthIndex(2026, 9),
+            firstMonth: NOW_INDEX,
             count: 1,
             interpolation: false,
             profiles: false,
-            values: true,
+            ranges: {},
             showError: false,
             loading: false,
             drawn: null,
             openGroup: null,
             exportOpen: false,
-            exportImage: null,
+            exportImages: [],
             exportTitle: '',
             exportFailed: false,
             navOpen: window.innerWidth > 700
         });
         const toast = ref(null);
-        const tip = ref(null);
         let toastTimer = null;
         let loadTimer = null;
 
         const quantity = computed(() => QUANTITIES[state.quantity]);
+        // Grouped as legacy groups them: by energy source, then virtual meters, then forecast cities.
+        // Each entry reads as the meter's full name and its unit.
         const meterGroups = computed(() => {
             const groups = {};
-            quantity.value.meters.forEach((m) => { (groups[m.location] = groups[m.location] || []).push(m); });
+            quantity.value.meters.forEach((m) => {
+                const own = QUANTITIES[quantityKeyOf(m, state.quantity)];
+                const group = m.group || own.title;
+                (groups[group] = groups[group] || []).push({ id: m.id, label: `${meterName(m)} (${own.unit})` });
+            });
             return groups;
         });
         const maxCount = computed(() => Math.min(12, NOW_INDEX - state.firstMonth + 1));
@@ -782,12 +933,13 @@ createApp({
             if (!d) return [];
             const q = QUANTITIES[d.quantity];
             const meter = q.meters.find((m) => m.id === d.meterId);
-            return Array.from({ length: d.count }, (_, i) => buildMonth(d.quantity, meter, d.firstMonth + i, d.interpolation));
+            return Array.from({ length: d.count }, (_, i) => buildMonth(quantityKeyOf(meter, d.quantity), meter, d.firstMonth + i, d.interpolation));
         });
         const currentScreen = computed(() => {
             if (state.exportOpen) return 'SCR-07';
             if (!state.drawn) return 'SCR-01';
-            if (QUANTITIES[state.drawn.quantity].kind === 'average') return 'SCR-06';
+            if (Object.keys(state.ranges).length) return 'SCR-08';
+            if (months.value[0].quantity.kind === 'average') return 'SCR-06';
             if (state.drawn.count > 1) return 'SCR-04';
             if (state.drawn.interpolation) return 'SCR-05';
             if (state.profiles) return 'SCR-03';
@@ -813,6 +965,7 @@ createApp({
             return new Promise((resolve) => {
                 loadTimer = setTimeout(() => {
                     state.drawn = { quantity: state.quantity, meterId: state.meterId, firstMonth: state.firstMonth, count: state.count, interpolation: state.interpolation };
+                    state.ranges = {};
                     state.loading = false;
                     nextTick(resolve);
                 }, 450);
@@ -830,44 +983,42 @@ createApp({
             const meter = QUANTITIES[d.quantity].meters.find((m) => m.id === d.meterId);
             const last = d.firstMonth + d.count - 1;
             const range = d.count === 1 ? monthLabel(d.firstMonth) : `${monthLabel(d.firstMonth)} do ${monthLabel(last)}`;
-            showToast(`Excel za ${meter.name}, ${range}, radi server kao i danas. U prototipu se datoteka ne preuzima.`);
+            showToast(`Excel za ${meterName(meter)}, ${range}, radi server kao i danas. U prototipu se datoteka ne preuzima.`);
         }
-        // One image of every drawn month, stacked in the order they show on the page.
+        // One picture per drawn month, each downloaded on its own.
         async function exportImage() {
             if (!state.drawn) return;
             state.exportOpen = true;
-            state.exportImage = null;
+            state.exportImages = [];
             state.exportFailed = false;
             const titles = months.value.map((m) => m.title);
             state.exportTitle = titles.length === 1 ? titles[0] : `${titles[0]} do ${titles[titles.length - 1]}`;
-            const sheet = document.createElement('div');
-            sheet.className = 'export-sheet';
-            document.querySelectorAll('.month-card').forEach((card) => sheet.appendChild(card.cloneNode(true)));
-            document.body.appendChild(sheet);
-            try {
-                state.exportImage = await modernScreenshot.domToPng(sheet, { scale: 2, backgroundColor: '#ffffff' });
-            } catch (error) {
-                state.exportFailed = true;
-                console.error(error);
-            } finally {
-                sheet.remove();
+            const cards = [...document.querySelectorAll('.month-card')];
+            for (const [i, card] of cards.entries()) {
+                const sheet = document.createElement('div');
+                sheet.className = 'export-sheet';
+                sheet.appendChild(card.cloneNode(true));
+                document.body.appendChild(sheet);
+                try {
+                    const src = await modernScreenshot.domToPng(sheet, { scale: 2, backgroundColor: '#ffffff' });
+                    if (!state.exportOpen) return;
+                    state.exportImages.push({ title: titles[i], src, fileName: 'tablicni-prikaz-' + titles[i].toLowerCase().replace(/ /g, '-') + '.png' });
+                } catch (error) {
+                    state.exportFailed = true;
+                    console.error(error);
+                    return;
+                } finally {
+                    sheet.remove();
+                }
             }
         }
-        function closeExport() { state.exportOpen = false; state.exportImage = null; }
-
-        function showTip(event, content) {
-            const rect = event.currentTarget.getBoundingClientRect();
-            const left = Math.min(window.innerWidth - 270, Math.max(8, rect.left + rect.width / 2 - 110));
-            const below = rect.top < 120;
-            tip.value = { ...content, style: { left: `${left}px`, top: below ? `${rect.bottom + 8}px` : 'auto', bottom: below ? 'auto' : `${window.innerHeight - rect.top + 8}px` } };
-        }
-        function hideTip() { tip.value = null; }
+        function closeExport() { state.exportOpen = false; state.exportImages = []; }
 
         async function jump(id) {
             closeExport();
-            hideTip();
-            const preset = { quantity: 'water', meterId: 'w1', firstMonth: monthIndex(2026, 9), count: 1, interpolation: false, profiles: false, values: true };
-            if (id === 'SCR-03' || id === 'SCR-07') preset.profiles = true;
+            const preset = { quantity: 'water', meterId: 'w1', firstMonth: monthIndex(2026, 9), count: 1, interpolation: false, profiles: false };
+            if (id === 'SCR-03') preset.profiles = true;
+            if (id === 'SCR-07') Object.assign(preset, { firstMonth: monthIndex(2026, 8), count: 2, profiles: true });
             if (id === 'SCR-04') Object.assign(preset, { firstMonth: monthIndex(2026, 8), count: 3, profiles: true });
             if (id === 'SCR-05') preset.interpolation = true;
             if (id === 'SCR-06') Object.assign(preset, { quantity: 'temperature-in', meterId: 't1' });
@@ -885,6 +1036,7 @@ createApp({
             const firstCard = document.querySelector('.month-card');
             if (firstCard) window.scrollTo({ top: firstCard.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
             if (id === 'SCR-07') exportImage();
+            if (id === 'SCR-08') state.ranges = { [monthIndex(2026, 9)]: { low: 0, high: 2 } };
         }
 
         function sidebarClick(item) {
@@ -894,8 +1046,8 @@ createApp({
         }
         const isActive = (item) => item.quantity === state.quantity || (item.children || []).some((c) => c.quantity === state.quantity);
 
-        return { state, quantity, meterGroups, maxCount, months, currentScreen, toast, tip, SIDEBAR, SCREENS,
-            setFirstMonth, draw, exportExcel, exportImage, closeExport, showTip, hideTip, jump, sidebarClick, isActive, showToast };
+        return { state, quantity, meterGroups, maxCount, months, currentScreen, toast, SIDEBAR, SCREENS, CAN_DOWNLOAD,
+            setFirstMonth, draw, exportExcel, exportImage, closeExport, jump, sidebarClick, isActive, showToast };
     },
     template: `
     <div id="wrapper">
@@ -952,12 +1104,8 @@ createApp({
                                         <form class="settings-grid" @submit.prevent="draw">
                                             <div class="form-group">
                                                 <label for="heatmap-meter" class="font-weight-bold">Uređaj</label>
-                                                <select id="heatmap-meter" class="form-control" :class="{ 'is-invalid': state.showError }" v-model="state.meterId" @change="state.showError = false">
-                                                    <option value="">Odaberite uređaj</option>
-                                                    <optgroup v-for="(meters, location) in meterGroups" :key="location" :label="location">
-                                                        <option v-for="m in meters" :key="m.id" :value="m.id">{{ m.name }}</option>
-                                                    </optgroup>
-                                                </select>
+                                                <meter-select id="heatmap-meter" :groups="meterGroups" :model-value="state.meterId" :invalid="state.showError"
+                                                    @update:model-value="state.meterId = $event; state.showError = false"></meter-select>
                                                 <span v-if="state.showError" class="field-hint text-danger">Morate odabrati uređaj</span>
                                             </div>
                                             <div class="form-group">
@@ -993,8 +1141,8 @@ createApp({
                                     </div>
                                 </div>
                                 <template v-else>
-                                    <month-card v-for="(m, i) in months" :key="m.index" :month="m" :show-profiles="state.profiles" :with-interpolation="state.drawn.interpolation" :show-values="state.values" @toggle-values="state.values = $event" @toggle-profiles="state.profiles = $event"
-                                        @tip="showTip" @untip="hideTip"></month-card>
+                                    <month-card v-for="m in months" :key="m.index" :month="m" :show-profiles="state.profiles" :range="state.ranges[m.index] || null"
+                                        @toggle-profiles="state.profiles = $event" @update:range="state.ranges[m.index] = $event"></month-card>
                                 </template>
 
                             </div>
@@ -1011,12 +1159,6 @@ createApp({
         </div>
     </div>
 
-    <div v-if="tip" class="emasys-tooltip" :style="tip.style">
-        <div v-for="line in tip.lines" :key="line">{{ line }}</div>
-        <strong>{{ tip.value }}</strong>
-        <div v-for="note in tip.notes" :key="note" class="muted">{{ note }}</div>
-    </div>
-
     <div v-if="toast" class="proto-toast" role="status">{{ toast }}</div>
 
     <div v-if="state.exportOpen" class="modal--active" role="dialog" aria-modal="true" aria-labelledby="export-title">
@@ -1024,18 +1166,24 @@ createApp({
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title" id="export-title">Izvoz slike, {{ state.exportTitle }}</h4>
+                    <h4 class="modal-title" id="export-title">Izvoz slika, {{ state.exportTitle }}</h4>
                     <button type="button" class="close" aria-label="Zatvori" @click="closeExport"><span aria-hidden="true">&times;</span></button>
                 </div>
                 <div class="modal-body">
-                    <div v-if="!state.exportImage && !state.exportFailed" class="state-box">
+                    <p v-if="!CAN_DOWNLOAD" class="export-note" style="margin: 0 0 var(--space-3)">U aplikaciji svaki mjesec ima gumb za preuzimanje. Pregled u kojem gledate prototip ne dopušta preuzimanje, pa su gumbi ovdje izostavljeni.</p>
+                    <div v-for="image in state.exportImages" :key="image.title" class="export-item">
+                        <div class="export-item__head">
+                            <h5>{{ image.title }}</h5>
+                            <a v-if="CAN_DOWNLOAD" class="btn btn--primary btn-sm" :href="image.src" :download="image.fileName"><i class="fa fa-download"></i> Preuzmi PNG</a>
+                        </div>
+                        <img :src="image.src" class="export-preview" :alt="'Tablica, ' + image.title">
+                    </div>
+                    <div v-if="state.exportImages.length < months.length && !state.exportFailed" class="state-box">
                         <div class="sk-spinner sk-spinner-wave"><div class="sk-rect1"></div><div class="sk-rect2"></div><div class="sk-rect3"></div><div class="sk-rect4"></div><div class="sk-rect5"></div></div>
                     </div>
                     <p v-if="state.exportFailed" class="text-danger">Slika se nije uspjela izraditi.</p>
-                    <img v-if="state.exportImage" :src="state.exportImage" class="export-preview" alt="Izvezena slika tablice">
-                    <p class="export-note">U aplikaciji gumb odmah preuzima sliku. U prototipu je prvo prikazana ovdje.</p>
                 </div>
-                <div class="modal-footer"><button type="button" class="btn btn--secondary" @click="closeExport">Zatvori</button><a v-if="state.exportImage" class="btn btn--primary" :href="state.exportImage" :download="'tablicni-prikaz-' + state.exportTitle.toLowerCase().replace(/ /g, '-') + '.png'"><i class="fa fa-download"></i> Preuzmi PNG</a></div>
+                <div class="modal-footer"><button type="button" class="btn btn--secondary" @click="closeExport">Zatvori</button></div>
             </div>
         </div>
     </div>
