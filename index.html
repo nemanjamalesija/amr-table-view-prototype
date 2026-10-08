@@ -39,21 +39,32 @@ a { cursor: pointer; }
 .profile-element .font-bold { color: var(--color-white); }
 .legal-links a { margin-left: var(--space-4); text-decoration: underline; }
 
-/* Settings card: one row of fields, the shape of the alarms filter row */
+/* Settings card: four fields and two buttons on one row, the shape of the alarms filter row */
 .settings-grid {
     display: grid;
-    grid-template-columns: minmax(200px, 2fr) minmax(140px, 1fr) minmax(90px, 0.6fr) auto auto;
+    grid-template-columns: minmax(280px, 2fr) 1fr 1fr auto 1fr 1fr;
     gap: 20px;
     align-items: end;
 }
 .settings-grid .form-group { margin-bottom: 0; position: relative; }
+/* Every field is as tall as the switch box, so the labels above them share one line.
+   The theme sets the select to 1.95rem with a longer selector, so this one names the form group too. */
+.settings-grid .form-group .form-control:not([size]) { height: var(--control-height); }
+/* Text that wraps lets a column shrink below its words and breaks the label and field lines. */
+.settings-grid label, .settings-grid .form-control, .settings-button { white-space: nowrap; }
 .switch-field { height: var(--control-height); display: flex; align-items: center; }
 .field-hint { position: absolute; top: 100%; left: 0; margin-top: var(--space-1); font-size: var(--font-size-caption); }
-.settings-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
-@media (max-width: 1399px) { .settings-grid { grid-template-columns: minmax(200px, 2fr) minmax(140px, 1fr) minmax(90px, 0.6fr) auto; } .settings-actions { grid-column: 1 / -1; } }
-@media (max-width: 575px) { .settings-grid { grid-template-columns: 1fr; } }
-@media (max-width: 575px) { .settings-grid { grid-template-columns: 1fr; } }
+.settings-button { display: flex; align-items: center; justify-content: center; gap: var(--space-1-5); width: 100%; height: var(--control-height); }
+/* On a wide screen each button fills a column of the field row. */
+.settings-actions { display: contents; }
 .settings-card .ibox-content { padding-bottom: 28px; }
+/* Below 1280px the field row has no room left for the buttons, so they move to a line of their own. */
+@media (min-width: 992px) and (max-width: 1279px) {
+    .settings-grid { grid-template-columns: minmax(280px, 2fr) 1fr 1fr auto; }
+    .settings-actions { display: flex; grid-column: 1 / -1; gap: 20px; margin-top: var(--space-2); }
+    .settings-button { width: auto; }
+}
+@media (max-width: 991px) { .settings-grid { grid-template-columns: 1fr; } }
 
 /* Toggle switch, copied from web/src/components/toggle-switch */
 .toggle-switch { position: relative; display: inline-block; width: 40px; height: 20px; padding: 0; border: 0;
@@ -66,7 +77,7 @@ a { cursor: pointer; }
 
 /* Month picker: amr-web has none yet */
 .month-picker { position: relative; }
-.month-picker__button { display: flex; align-items: center; justify-content: space-between; text-align: left; cursor: pointer; background: var(--color-white); }
+.month-picker__button { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); text-align: left; cursor: pointer; background: var(--color-white); }
 .month-picker__button i { color: var(--color-gray-500); }
 .month-picker__panel { position: absolute; z-index: 30; top: calc(100% + var(--space-1)); left: 0; width: 240px;
     padding: var(--space-3); background: var(--color-white); border: var(--border-width) solid var(--color-gray-200);
@@ -103,61 +114,60 @@ a { cursor: pointer; }
 .state-box i { font-size: 28px; color: var(--color-gray-400); display: block; margin-bottom: var(--space-3); }
 
 /* Month card */
-.month-card .ibox-title { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; padding-right: 15px; min-height: 48px; }
+/* The header names the meter, the month and its total sit centred above the grid */
+.month-card .ibox-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; column-gap: var(--space-4); padding-right: 15px; min-height: 48px; }
 .month-card .ibox-title h5 { float: none; margin: 0; }
-.month-card__meter { color: var(--color-gray-500); font-size: var(--font-size-body); }
-/* The month total sits under the month title, as legacy prints it */
-.month-card__titles { display: flex; flex-direction: column; gap: var(--space-0-5); }
-.month-card__titles h5 { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-3); }
-.month-card__titles .month-card__meter { font-weight: 400; }
-.month-card__total { color: var(--color-gray-700); font-size: var(--font-size-body); }
-.month-card__export { margin-left: auto; height: 28px; padding: 0 var(--space-3); font-size: var(--font-size-body); }
+.month-card__export { height: 28px; padding: 0 var(--space-3); font-size: var(--font-size-body); }
 .export-sheet .month-card__export { display: none; }
-.month-card__total strong { color: var(--color-gray-900); font-variant-numeric: tabular-nums; }
+.month-card__heading { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); text-align: center; }
+.month-card__heading h3 { margin: 0; font-size: 18px; font-weight: var(--font-weight-semibold); color: var(--color-gray-900); }
+.month-card__heading p { margin: 0; font-size: 0.875rem; color: var(--color-gray-700); }
+.month-card__heading strong { color: var(--color-gray-900); font-weight: var(--font-weight-semibold); font-variant-numeric: tabular-nums; }
 .month-card .ibox-content { padding: 15px 20px 20px; }
 .month-stats { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-10); margin-bottom: var(--space-3); }
 .month-stats div { display: flex; flex-direction: column; }
 .month-stats dt { font-weight: 400; font-size: var(--font-size-caption); color: var(--color-gray-500); }
 .month-stats dd { margin: 0; color: var(--color-gray-900); font-weight: var(--font-weight-semibold); font-variant-numeric: tabular-nums; }
 .month-stats dd small { font-weight: 400; color: var(--color-gray-700); font-size: var(--font-size-caption); }
-.coverage-alert { display: flex; gap: var(--space-2); align-items: flex-start; padding: var(--space-2) var(--space-3); margin-bottom: var(--space-3); font-size: var(--font-size-body); }
+.coverage-alert { display: flex; gap: var(--space-2); align-items: flex-start; padding: var(--space-2) var(--space-3); margin-bottom: var(--space-4); font-size: var(--font-size-body); }
 .coverage-alert i { margin-top: 3px; }
 
 /* The grid */
 .heat-scroll { overflow-x: auto; }
-table.heat { width: 100%; min-width: 860px; table-layout: fixed; border-collapse: separate; border-spacing: 2px;
-    font-size: 10px; font-variant-numeric: tabular-nums; color: var(--color-gray-900); }
-.heat col.c-profile { width: 20px; }
-.heat col.c-hour { width: 40px; }
-.heat col.c-avg { width: 54px; }
+table.heat { width: 100%; min-width: 1180px; table-layout: fixed; border-collapse: separate; border-spacing: 3px;
+    font-size: var(--font-size-caption); font-variant-numeric: tabular-nums; color: var(--color-gray-900); }
+.heat col.c-profile { width: 24px; }
+.heat col.c-hour { width: 44px; }
+.heat col.c-avg { width: 60px; }
 /* The average column sits left of the days, with a wider gap after it */
 .heat .avg, .heat .month-total { border-right: 6px solid var(--color-white); background-clip: padding-box; }
 .heat th, .heat td { padding: 0; text-align: center; white-space: nowrap; overflow: hidden; }
-.heat thead th { height: 32px; line-height: 1.2; font-weight: var(--font-weight-semibold); vertical-align: bottom; padding-bottom: var(--space-0-5); }
-.heat thead th .wd { display: block; font-weight: 400; font-size: 9px; color: var(--color-gray-500); }
+.heat thead th { height: 40px; line-height: 1.2; font-weight: var(--font-weight-semibold); vertical-align: bottom; padding-bottom: var(--space-0-5); }
+.heat thead th .wd { display: block; font-weight: 400; font-size: var(--font-size-caption-2); color: var(--color-gray-500); }
 .heat thead th.weekend { background: var(--color-gray-200); border-radius: var(--radius-md) var(--radius-md) 0 0; }
 .heat thead th.weekend .wd { color: var(--color-gray-700); }
-.heat th.hour { color: var(--color-gray-500); font-weight: 400; border-radius: 2px; }
+.heat th.hour { color: var(--color-gray-500); font-weight: 400; border-radius: var(--radius-md); }
 .heat th.hour-l { text-align: right; padding-right: var(--space-1); }
 .heat th.hour-r { text-align: left; padding-left: var(--space-1); }
-.heat td.cell { height: 20px; border-radius: 2px; cursor: default; color: rgba(0, 0, 0, 0.7); }
+.heat td.cell { height: 28px; border-radius: var(--radius-md); cursor: default; color: rgba(0, 0, 0, 0.7); }
 .heat td.nodata { background: var(--color-gray-50); box-shadow: inset 0 0 0 1px var(--color-gray-200); }
 .heat td.max, .heat td.min { box-shadow: inset 0 0 0 3px var(--color-white), 0 0 0 1px var(--color-gray-400); font-weight: 700; color: var(--color-white); text-shadow: 0 0 2px rgba(0, 0, 0, 0.45); }
-.heat td.avg, .heat th.avg { background: var(--color-gray-100); border-radius: 2px; font-weight: var(--font-weight-semibold); color: var(--color-gray-700); }
+.heat td.avg, .heat th.avg { background: var(--color-gray-100); border-radius: var(--radius-md); font-weight: var(--font-weight-semibold); color: var(--color-gray-700); }
 .heat thead th.avg { background: none; color: var(--color-gray-500); font-weight: 400; }
-.heat tfoot td { height: 22px; background: var(--color-gray-100); border-radius: 2px; font-weight: var(--font-weight-semibold); color: var(--color-gray-700); }
+.heat tfoot td { height: 30px; background: var(--color-gray-100); border-radius: var(--radius-md); font-weight: var(--font-weight-semibold); color: var(--color-gray-700); }
 .heat tfoot td.weekend { background: var(--color-gray-200); }
 .heat tfoot td.month-total { background: var(--color-gray-200); color: var(--color-gray-900); }
-.heat tfoot th.hour { font-size: var(--font-size-caption); color: var(--color-gray-700); }
+.heat tfoot th.hour { color: var(--color-gray-700); }
 
-/* With profiles on, each profile shades its letter, both hour labels and the hourly average */
-.heat td.profile { font-size: var(--font-size-caption); font-weight: 700; color: var(--color-gray-900); border-radius: 2px; }
+/* The profile column is always there, so the switch moves no column. With profiles on,
+   each profile shades its letter, both hour labels and the hourly average */
+.heat td.profile { font-weight: 700; color: var(--color-gray-900); border-radius: var(--radius-md); }
 
 /* Legend */
-.heat-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-4); margin-top: var(--space-2-5); font-size: var(--font-size-caption); color: var(--color-gray-600); }
+.heat-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-4); margin-top: var(--space-4); font-size: var(--font-size-body); color: var(--color-gray-600); }
 .heat-legend > span { display: inline-flex; align-items: center; gap: var(--space-1-5); }
-.heat-legend .scale { width: 96px; height: 8px; border-radius: 2px; background: linear-gradient(90deg, var(--heat-low), var(--heat-mid), var(--heat-high)); }
-.heat-legend .swatch { width: 12px; height: 12px; display: inline-block; border-radius: 2px; }
+.heat-legend .scale { width: 96px; height: 8px; border-radius: var(--radius-md); background: linear-gradient(90deg, var(--heat-low), var(--heat-mid), var(--heat-high)); }
+.heat-legend .swatch { width: 1em; height: 1em; display: inline-block; border-radius: var(--radius-md); }
 .swatch--mark { box-shadow: inset 0 0 0 2px var(--color-white), 0 0 0 1px var(--color-gray-400); }
 .legend-switches { display: inline-flex; align-items: center; gap: var(--space-4); padding-right: var(--space-4); border-right: var(--border-width) solid var(--color-gray-200); }
 .legend-switch { display: inline-flex; align-items: center; gap: var(--space-1-5); margin: 0; color: var(--color-gray-900); font-weight: var(--font-weight-semibold); cursor: pointer; }
@@ -173,10 +183,10 @@ table.heat { width: 100%; min-width: 860px; table-layout: fixed; border-collapse
 /* Colour range: two handles over the heat scale, and the same two values as text fields */
 .range-control { display: inline-flex; align-items: center; gap: var(--space-2); }
 .range-control__label { color: var(--color-gray-900); font-weight: var(--font-weight-semibold); }
-.range-input { width: 64px; height: 26px; padding: 0 var(--space-1-5); border: var(--border-width) solid var(--color-gray-300); border-radius: var(--radius-md);
-    font-size: var(--font-size-caption); text-align: right; font-variant-numeric: tabular-nums; color: var(--color-gray-900); }
+.range-input { width: 72px; height: var(--control-height); padding: 0 var(--space-2); border: var(--border-width) solid var(--color-gray-300); border-radius: var(--radius-md);
+    font-size: var(--font-size-body); text-align: right; font-variant-numeric: tabular-nums; color: var(--color-gray-900); }
 .range-input:focus { outline: 0; border-color: var(--color-primary); }
-.range-slider { position: relative; width: 220px; height: 20px; }
+.range-slider { position: relative; width: 240px; height: 20px; }
 .range-slider__track { position: absolute; left: 7px; right: 7px; top: 6px; height: 8px; border-radius: 2px; }
 .range-slider input[type=range] { position: absolute; inset: 0; width: 100%; height: 20px; margin: 0; padding: 0; background: none;
     pointer-events: none; -webkit-appearance: none; appearance: none; }
@@ -187,7 +197,7 @@ table.heat { width: 100%; min-width: 860px; table-layout: fixed; border-collapse
 .range-slider input[type=range]::-moz-range-thumb { pointer-events: auto; width: 10px; height: 10px; border-radius: 50%; background: var(--color-white);
     border: var(--border-width-thick) solid var(--color-gray-700); box-shadow: var(--elevation-dropdown); cursor: grab; }
 .range-slider input[type=range]:focus-visible::-webkit-slider-thumb { border-color: var(--color-primary); }
-.range-reset { padding: 0; border: 0; background: none; font-size: var(--font-size-caption); color: var(--color-primary); cursor: pointer; }
+.range-reset { padding: 0; border: 0; background: none; font-size: var(--font-size-body); color: var(--color-primary); cursor: pointer; }
 .range-reset:hover { text-decoration: underline; }
 /* The picture shows the scale as plain text, without the handles and fields */
 .heat-legend > .scale-static { display: none; }
@@ -690,7 +700,7 @@ const MonthCard = {
         // The darkest text keeps the hour labels and averages readable on the darkest grey.
         const profileShade = (hour) => { const p = profileOf(hour); return p ? { backgroundColor: p.tint, color: 'var(--color-gray-900)' } : null; };
         const monthNumber = computed(() => fromIndex(props.month.index).month);
-        const columnCount = computed(() => props.month.days.length + 3 + (profiles.value ? 1 : 0));
+        const columnCount = computed(() => props.month.days.length + 4);
 
         // The colour scale runs between the two values the user set, or between the month's min and max.
         // Values below the low end are fully green, values above the high end fully red.
@@ -759,14 +769,15 @@ const MonthCard = {
     },
     template: `<div class="ibox month-card" ref="root">
         <div class="ibox-title">
-            <div class="month-card__titles">
-                <h5>{{ month.title }} <span class="month-card__meter">{{ meterName(month.meter) }} ({{ unit }})</span></h5>
-                <span class="month-card__total">{{ isConsumption ? 'Ukupno' : 'Prosječno očitanje' }}: <strong>{{ month.monthTotal === null ? '-/-' : fmt(month.monthTotal) + ' ' + unit }}</strong></span>
-            </div>
+            <h5>{{ meterName(month.meter) }} ({{ unit }})</h5>
             <button type="button" class="btn btn--secondary month-card__export" :disabled="isExporting" @click="exportImage">
                 <i :class="isExporting ? 'fa fa-spinner fa-spin' : 'fa fa-download'"></i> Preuzmi kao sliku</button>
         </div>
         <div class="ibox-content">
+            <div class="month-card__heading">
+                <h3>{{ month.title }}</h3>
+                <p>{{ isConsumption ? 'Ukupno' : 'Prosječno očitanje' }}: <strong>{{ month.monthTotal === null ? '-/-' : fmt(month.monthTotal) + ' ' + unit }}</strong></p>
+            </div>
             <div v-if="month.coverage < 0.97" class="alert alert-warning coverage-alert" role="status">
                 <i class="fa fa-exclamation-triangle"></i>
                 <div>
@@ -777,7 +788,7 @@ const MonthCard = {
             <div class="heat-scroll">
                 <table class="heat">
                     <colgroup>
-                        <col v-if="profiles" class="c-profile">
+                        <col class="c-profile">
                         <col class="c-hour">
                         <col class="c-avg">
                         <col v-for="d in month.days" :key="'c' + d.day">
@@ -785,7 +796,7 @@ const MonthCard = {
                     </colgroup>
                     <thead>
                         <tr>
-                            <th v-if="profiles"></th>
+                            <th></th>
                             <th class="hour hour-l">Sat</th>
                             <th class="avg">Ø</th>
                             <th v-for="d in month.days" :key="'h' + d.day" :class="{ weekend: d.isWeekend }"><span class="wd">{{ WEEKDAYS[d.weekday] }}</span>{{ pad(d.day) }}</th>
@@ -796,6 +807,7 @@ const MonthCard = {
                         <tr v-for="hour in HOURS" :key="hour">
                             <td v-if="profiles && profileOf(hour).from === hour" class="profile"
                                 :rowspan="profileOf(hour).to - profileOf(hour).from" :style="profileShade(hour)">{{ profileOf(hour).name }}</td>
+                            <td v-else-if="!profiles"></td>
                             <th class="hour hour-l" :style="profileShade(hour)">{{ hourLabel(hour) }}</th>
                             <td class="avg" :style="profileShade(hour)">{{ fmt(month.hourlyAverages[hour]) }}</td>
                             <td v-for="d in month.days" :key="d.day" :class="cellClass(d, hour)" :style="cellStyle(d, hour)"
@@ -805,7 +817,7 @@ const MonthCard = {
                     </tbody>
                     <tfoot>
                         <tr>
-                            <th v-if="profiles"></th>
+                            <th></th>
                             <th class="hour hour-l">{{ isConsumption ? '∑' : 'Ø' }}</th>
                             <td class="month-total">{{ fmtTotal(month.dailyAverage) }}</td>
                             <td v-for="(d, i) in month.days" :key="'s' + d.day" :class="{ weekend: d.isWeekend }">{{ fmtTotal(month.dayValues[i]) }}</td>
@@ -1100,8 +1112,8 @@ createApp({
                                                 <div class="switch-field"><toggle-switch id="heatmap-interpolation" v-model="state.interpolation" aria-label="Interpolacija"></toggle-switch></div>
                                             </div>
                                             <div class="settings-actions">
-                                                <button type="submit" class="btn btn--primary btn-w-m" style="height: var(--control-height)">Nacrtaj tablice</button>
-                                                <button type="button" class="btn btn--secondary btn-w-m" style="height: var(--control-height)" :disabled="!state.drawn || state.loading"
+                                                <button type="submit" class="btn btn--primary settings-button">Nacrtaj tablice</button>
+                                                <button type="button" class="btn btn--secondary settings-button" :disabled="!state.drawn || state.loading"
                                                     :title="!state.drawn ? 'Prvo nacrtajte tablice' : null" @click="exportExcel"><i class="fa fa-file-excel"></i> Izvoz podataka</button>
                                             </div>
                                         </form>
